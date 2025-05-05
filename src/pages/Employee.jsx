@@ -13,7 +13,7 @@ const INITIAL_EMPLOYEE = {
   position: '',
   hireDate: '',
   contractType: '',
-  department: { name: '' }
+  department: null
 };
 
 const Employee = () => {
@@ -86,7 +86,9 @@ const Employee = () => {
 
     setLoading(true);
     try {
-      const response = await EmployeeService.createEmployee(newEmployee);
+
+      const dto = toEmployeeDTO(newEmployee);
+      const response = await EmployeeService.createEmployee(dto);
 
       const message = response.data.message;
       toast.success(message);
@@ -108,7 +110,9 @@ const Employee = () => {
     if (!editingEmployee?.id) return;
     setLoading(true);
     try {
-      const response = await EmployeeService.updateEmployee(editingEmployee.id, editingEmployee);
+
+      const dto = toEmployeeDTO(editingEmployee);
+      const response = await EmployeeService.updateEmployee(editingEmployee.id, dto);
 
       const message = response.data.message;
       toast.success(message);
@@ -146,6 +150,20 @@ const Employee = () => {
       }
     }
   };
+
+  const toEmployeeDTO = (employee) => ({
+    id: employee.id || null,
+    name: employee.name,
+    firstName: employee.firstName,
+    email: employee.email,
+    phone: employee.phone,
+    address: employee.address,
+    position: employee.position,
+    hireDate: employee.hireDate,
+    contractType: employee.contractType,
+    departmentID: employee.department?.id || null,
+  });
+
 
   return (
     <div className="pc-container">
