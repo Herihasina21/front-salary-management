@@ -2,18 +2,22 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { PayrollService } from '../services/PayrollService'; 
 import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
+import {EmployeeService} from "../services/EmployeeService.jsx";
 
 const INITIAL_PAYROLL = {
   periodStart: '',
   periodEnd: '',
   netSalary: '',
-  employee: null,
+  employeeId: '',
+  bonuses: null,
+  deductions: null
 };
 
 const Payroll = () => {
   const [payrolls, setPayrolls] = useState([]);
   const [newPayroll, setNewPayroll] = useState(INITIAL_PAYROLL);
   const [editingPayroll, setEditingPayroll] = useState(null);
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const fetchPayrolls = async () => {
@@ -30,8 +34,20 @@ const Payroll = () => {
     }
   };
 
+  const fetchEmployees = async () => {
+    try {
+      const response = await EmployeeService.getAllEmployees();
+      setEmployees(response.data.data || []);
+    } catch (error) {
+      console.error(error);
+      const message = error.response?.data?.message || "Erreur lors du chargement des employés";
+      toast.error(message);
+    }
+  };
+
   useEffect(() => {
     fetchPayrolls();
+    fetchEmployees();
   }, []);
 
   const handleInputChange = (e, isEditing = false) => {
@@ -149,7 +165,6 @@ const Payroll = () => {
                         <th>Début Période</th>
                         <th>Fin Période</th>
                         <th>Salaire Net</th>
-                        <th>Employé ID</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -163,7 +178,6 @@ const Payroll = () => {
                             <td>{payroll.periodStart}</td>
                             <td>{payroll.periodEnd}</td>
                             <td>{payroll.netSalary}</td>
-                            <td>{payroll.employee?.id || 'N/A'}</td>
                             <td>
                               <div className="d-flex gap-2">
                                 <button className="btn btn-sm btn-warning me-2 d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#editModal" onClick={() => handleEditClick(payroll)}>
@@ -195,7 +209,7 @@ const Payroll = () => {
               <button type="button" className="btn-close" id="closeAddModal" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body">
-              {renderPayrollForm(newPayroll, handleInputChange, false)}
+              {renderPayrollForm(newPayroll, handleInputChange, employees, false)}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
@@ -216,7 +230,7 @@ const Payroll = () => {
               <button type="button" className="btn-close" id="closeEditModal" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body">
-              {editingPayroll && renderPayrollForm(editingPayroll, handleInputChange, true)}
+              {editingPayroll && renderPayrollForm(editingPayroll, handleInputChange, employees, true)}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
@@ -232,52 +246,46 @@ const Payroll = () => {
 };
 
 // Composant réutilisable pour le formulaire de fiche de paie
-const renderPayrollForm = (payroll, handleChange, isEditing = false) => (
-  <form>
-    <div className="mb-3">
-      <label className="form-label">Début de Période</label>
-      <input
-        type="date"
-        className="form-control"
-        name="periodStart"
-        value={payroll.periodStart}
-        onChange={(e) => handleChange(e, isEditing)}
-        required
-      />
-    </div>
-    <div className="mb-3">
-      <label className="form-label">Fin de Période</label>
-      <input
-        type="date"
-        className="form-control"
-        name="periodEnd"
-        value={payroll.periodEnd}
-        onChange={(e) => handleChange(e, isEditing)}
-        required
-      />
-    </div>
-    <div className="mb-3">
-      <label className="form-label">Salaire Net</label>
-      <input
-        type="number"
-        className="form-control"
-        name="netSalary"
-        value={payroll.netSalary}
-        onChange={(e) => handleChange(e, isEditing)}
-        required
-      />
-    </div>
-    <div className="mb-3">
-      <label className="form-label">ID de l'Employé</label>
-      <input
-        type="number"
-        className="form-control"
-        name="employee"
-        value={payroll.employee || ''}
-        onChange={(e) => handleChange(e, isEditing)}
-      />
-    </div>
-  </form>
+const renderPayrollForm = (payroll, handleChange, employees, isEditing = false) => (
+        <form>
+          <div className="mb-3">
+            <label className="form-label">Début de Période</label>
+            <input
+                    type="date"
+                    className="form-control"
+                    name="periodStart"
+                    value={payroll.periodStart}
+                    onChange={(e) => handleChange(e, isEditing)}
+                    required
+            />
+          </div>
+          <div className="mb-3">
+            <label className="form-label">Fin de Période</label>
+            <input
+                    type="date"
+                    className="form-control"
+                    name="periodEnd"
+                    value={payroll.periodEnd}
+                    onChange={(e) => handleChange(e, isEditing)}
+                    required
+            />
+          </div>
+
+          <div className="mb-3">
+            <label className="form-label">Employée</label>
+            <select
+                    className="form-select"
+                    name="employee"
+                    value={payroll.employee?.id || ''}
+                    onChange={(e) => handleChange(e, isEditing)}
+            >
+              <option value="">-- Sélectionner un employé --</option>
+              {employees.map(emp => (
+                      <option key={emp.id} value={emp.id}>{emp.name}</option>
+              ))}
+            </select>
+          </div>
+        </form>
 );
 
 export default Payroll;

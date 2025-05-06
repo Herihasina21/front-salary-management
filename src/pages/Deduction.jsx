@@ -5,8 +5,7 @@ import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
 
 const INITIAL_DEDUCTION = {
   type: '',
-  amount: '',
-  payroll: null
+  amount: ''
 };
 
 const Deduction = () => {
@@ -244,26 +243,15 @@ const renderDeductionForm = (deduction, handleChange, isEditing = false) => (
       />
     </div>
     <div className="mb-3">
-      <label className="form-label">Montant</label>
+      <label className="form-label">Montant (Ar)</label>
       <input
         type="number"
         className="form-control"
         name="amount"
         value={deduction.amount}
         onChange={(e) => handleChange(e, isEditing)}
-        placeholder="Montant"
+        placeholder="Montant (Ar)"
         required
-      />
-    </div>
-    <div className="mb-3">
-      <label className="form-label">ID de la Fiche de Paie (Optionnel)</label>
-      <input
-        type="number"
-        className="form-control"
-        name="payroll"
-        value={deduction.payroll || ''}
-        onChange={(e) => handleChange(e, isEditing)}
-        placeholder="ID de la fiche de paie (facultatif)"
       />
     </div>
   </form>

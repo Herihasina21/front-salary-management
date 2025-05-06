@@ -6,7 +6,7 @@ import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
 
 const INITIAL_SALARY = {
   baseSalary: '',
-  employee: { id: '' },
+  employeeId: '',
 };
 
 const Salary = () => {
@@ -264,7 +264,7 @@ const renderSalaryForm = (salary, handleChange, employees, isEditing = false) =>
       <label className="form-label">Employé</label>
       <select
         className="form-select"
-        name="employee.id"
+        name="employeeId"
         value={salary.employee?.id || ''}
         onChange={(e) => handleChange(e, isEditing)}
         required

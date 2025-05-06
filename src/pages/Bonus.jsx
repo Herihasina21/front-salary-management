@@ -251,7 +251,7 @@ function renderBonusForm(bonus, onChange) {
         <input
           type="number"
           className="form-control"
-          placeholder="Montant (€)"
+          placeholder="Montant (Ar)"
           name="amount"
           value={bonus.amount}
           onChange={onChange}
