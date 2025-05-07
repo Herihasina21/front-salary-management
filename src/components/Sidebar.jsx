@@ -57,7 +57,7 @@ function Sidebar() {
             <li className={`pc-item ${location.pathname === '/bonus' ? 'active' : ''}`}>
               <Link to="/bonus" className="pc-link">
                 <MdStar className="pc-micon" />
-                <span className="pc-mtext">Primes</span>
+                <span className="pc-mtext">Bonus</span>
               </Link>
             </li>
 

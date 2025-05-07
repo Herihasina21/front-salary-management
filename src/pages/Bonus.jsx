@@ -5,7 +5,7 @@ import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
 
 const INITIAL_BONUS = {
   type: '',
-  amount: 0
+  amount: '' // Changed to string to handle input directly
 };
 
 export default function Bonus() {
@@ -13,6 +13,7 @@ export default function Bonus() {
   const [newBonus, setNewBonus] = useState(INITIAL_BONUS);
   const [editingBonus, setEditingBonus] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const fetchBonuses = async () => {
     setLoading(true);
@@ -34,6 +35,7 @@ export default function Bonus() {
 
   const handleInputChange = (e, isEditing = false) => {
     const { name, value } = e.target;
+    setErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
     if (isEditing) {
       setEditingBonus(prev => ({ ...prev, [name]: value }));
     } else {
@@ -41,20 +43,43 @@ export default function Bonus() {
     }
   };
 
+  const validateForm = (bonus) => {
+    let isValid = true;
+    const newErrors = {};
+
+    if (!bonus.type.trim()) {
+      newErrors.type = 'Le type de bonus est obligatoire.';
+      isValid = false;
+    }
+    if (!bonus.amount.trim()) {
+      newErrors.amount = 'Le montant du bonus est obligatoire.';
+      isValid = false;
+    } else if (!/^\d+$/.test(bonus.amount)) {
+      newErrors.amount = 'Le montant doit contenir uniquement des chiffres.';
+      isValid = false;
+    } else if (parseFloat(bonus.amount) < 0) {
+      newErrors.amount = 'Le montant ne peut pas être négatif.';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const resetNewBonus = () => {
     setNewBonus(INITIAL_BONUS);
     setEditingBonus(null);
+    setErrors({});
   };
 
   const addBonus = async () => {
-    if (!newBonus.type || newBonus.amount === null || newBonus.amount < 0) {
-      toast.error('Le type et le montant du bonus sont obligatoires.');
+    if (!validateForm(newBonus)) {
       return;
     }
 
     setLoading(true);
     try {
-      const response = await BonusService.createBonus(newBonus);
+      const response = await BonusService.createBonus({ ...newBonus, amount: parseFloat(newBonus.amount) });
       toast.success(response.data.message);
       resetNewBonus();
       await fetchBonuses();
@@ -69,14 +94,14 @@ export default function Bonus() {
   };
 
   const updateBonus = async () => {
-    if (!editingBonus?.id || !editingBonus.type || editingBonus.amount === null || editingBonus.amount < 0) {
-      toast.error('L\'ID, le type et le montant du bonus sont obligatoires.');
+    if (!editingBonus?.id) return;
+    if (!validateForm(editingBonus)) {
       return;
     }
 
     setLoading(true);
     try {
-      const response = await BonusService.updateBonus(editingBonus.id, editingBonus);
+      const response = await BonusService.updateBonus(editingBonus.id, { ...editingBonus, amount: parseFloat(editingBonus.amount) });
       toast.success(response.data.message);
       resetNewBonus();
       await fetchBonuses();
@@ -105,7 +130,8 @@ export default function Bonus() {
   };
 
   const handleEditClick = (bonus) => {
-    setEditingBonus({ ...bonus });
+    setEditingBonus({ ...bonus, amount: String(bonus.amount) }); // Convert amount to string for input
+    setErrors({});
   };
 
   return (
@@ -136,9 +162,9 @@ export default function Bonus() {
                   <MdAdd className="me-2" /> Ajouter un Bonus
                 </button>
               </div>
-              <div className="card-body px-0 pt-0 pb-2">
-                <div className="table-responsive p-0">
-                  <table className="table align-items-center mb-0">
+              <div className="card-body">
+                <div className="dt-responsive table-responsive">
+                  <table className="table table-striped table-bordered nowrap">
                     <thead>
                       <tr>
                         <th>ID</th>
@@ -149,7 +175,7 @@ export default function Bonus() {
                     </thead>
                     <tbody>
                       {bonuses.length === 0 ? (
-                        <tr><td colSpan="6">Aucun bonus trouvé</td></tr>
+                        <tr><td colSpan="4">Aucun bonus trouvé</td></tr>
                       ) : (
                         bonuses.map(bonus => (
                           <tr key={bonus.id}>
@@ -195,7 +221,7 @@ export default function Bonus() {
               <button type="button" className="btn-close" id="closeAddBonusModal" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body">
-              {renderBonusForm(newBonus, handleInputChange)}
+              {renderBonusForm(newBonus, handleInputChange, errors)}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
@@ -216,7 +242,7 @@ export default function Bonus() {
               <button type="button" className="btn-close" id="closeEditBonusModal" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body">
-              {editingBonus && renderBonusForm(editingBonus, (e) => handleInputChange(e, true))}
+              {editingBonus && renderBonusForm(editingBonus, (e) => handleInputChange(e, true), errors)}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
@@ -232,30 +258,39 @@ export default function Bonus() {
 }
 
 // Formulaire Bonus (Réutilisable)
-function renderBonusForm(bonus, onChange) {
+function renderBonusForm(bonus, onChange, errors) {
   return (
     <form>
-      <div className="mb-3">
-        <label className="form-label">Type de bonus (ex: Ancienneté)</label>
+      <div className="form-floating mb-3">
         <input
           type="text"
-          className="form-control"
-          placeholder="Type de bonus"
+          className={`form-control ${errors.type ? 'is-invalid' : ''}`}
+          id="floatingBonusType"
+          placeholder="Type de bonus (ex: Ancienneté)"
           name="type"
           value={bonus.type}
           onChange={onChange}
         />
+        <label htmlFor="floatingBonusType">Type de bonus (ex: Ancienneté)</label>
+        {errors.type && (
+          <div className="invalid-feedback d-block mt-1">{errors.type}</div>
+        )}
       </div>
-      <div className="mb-3">
-        <label className="form-label">Montant (Ar)</label>
+      <div className="form-floating mb-3">
         <input
           type="number"
-          className="form-control"
+          className={`form-control ${errors.amount ? 'is-invalid' : ''}`}
+          id="floatingBonusAmount"
           placeholder="Montant (Ar)"
           name="amount"
           value={bonus.amount}
           onChange={onChange}
+          min="1" 
         />
+        <label htmlFor="floatingBonusAmount">Montant (Ar)</label>
+        {errors.amount && (
+          <div className="invalid-feedback d-block mt-1">{errors.amount}</div>
+        )}
       </div>
     </form>
   );

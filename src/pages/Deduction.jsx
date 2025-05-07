@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
-import { DeductionService } from '../services/DeductionService'; 
+import { DeductionService } from '../services/DeductionService';
 import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
 
 const INITIAL_DEDUCTION = {
   type: '',
-  amount: ''
+  amount: '',
 };
 
 const Deduction = () => {
@@ -13,6 +13,7 @@ const Deduction = () => {
   const [newDeduction, setNewDeduction] = useState(INITIAL_DEDUCTION);
   const [editingDeduction, setEditingDeduction] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const fetchDeductions = async () => {
     try {
@@ -34,19 +35,49 @@ const Deduction = () => {
 
   const handleInputChange = (e, isEditing = false) => {
     const { name, value } = e.target;
-    if (isEditing) {
-      setEditingDeduction(prev => ({ ...prev, [name]: value }));
-    } else {
-      setNewDeduction(prev => ({ ...prev, [name]: value === "" ? null : value }));
+    setErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
+
+    // Prevent negative numbers
+    let newValue = value;
+    if (name === 'amount' && value < 0) {
+      return; // Stop update, keep previous value
     }
+
+    if (isEditing) {
+      setEditingDeduction(prev => ({ ...prev, [name]: newValue }));
+    } else {
+      setNewDeduction(prev => ({ ...prev, [name]: newValue }));
+    }
+  };
+
+  const validateForm = (deduction) => {
+    let isValid = true;
+    const newErrors = {};
+
+    if (!deduction.type?.trim()) {
+      newErrors.type = 'Le type de déduction est obligatoire.';
+      isValid = false;
+    }
+    if (!deduction.amount || isNaN(deduction.amount) || parseFloat(deduction.amount) <= 0) {
+      newErrors.amount = 'Le montant doit être un nombre positif.';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
   };
 
   const resetForm = () => {
     setNewDeduction(INITIAL_DEDUCTION);
     setEditingDeduction(null);
+    setErrors({});
   };
 
   const addDeduction = async () => {
+    if (!validateForm(newDeduction)) {
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await DeductionService.createDeduction(newDeduction);
@@ -67,6 +98,9 @@ const Deduction = () => {
 
   const updateDeduction = async () => {
     if (!editingDeduction?.id) return;
+    if (!validateForm(editingDeduction)) {
+      return;
+    }
     setLoading(true);
     try {
       const response = await DeductionService.updateDeduction(editingDeduction.id, editingDeduction);
@@ -86,6 +120,7 @@ const Deduction = () => {
 
   const handleEditClick = (deduction) => {
     setEditingDeduction({ ...deduction });
+    setErrors({});
   };
 
   const deleteDeduction = async (id) => {
@@ -138,15 +173,14 @@ const Deduction = () => {
                   <MdAdd className="me-2" /> Ajouter une Déduction
                 </button>
               </div>
-              <div className="card-body px-0 pt-0 pb-2">
-                <div className="table-responsive p-0">
-                  <table className="table align-items-center mb-0">
+              <div className="card-body">
+                <div className="dt-responsive table-responsive">
+                  <table className="table table-striped table-bordered nowrap">
                     <thead>
                       <tr>
                         <th>ID</th>
                         <th>Type</th>
-                        <th>Montant</th>
-                        <th>Fiche de Paie</th>
+                        <th>Montant (Ar)</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -159,7 +193,6 @@ const Deduction = () => {
                             <td>{deduction.id}</td>
                             <td>{deduction.type}</td>
                             <td>{deduction.amount}</td>
-                            <td>{deduction.payroll?.id || 'N/A'}</td>
                             <td>
                               <div className="d-flex gap-2">
                                 <button className="btn btn-sm btn-warning me-2 d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#editModal" onClick={() => handleEditClick(deduction)}>
@@ -191,7 +224,7 @@ const Deduction = () => {
               <button type="button" className="btn-close" id="closeAddModal" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body">
-              {renderDeductionForm(newDeduction, handleInputChange, false)}
+              {renderDeductionForm(newDeduction, handleInputChange, false, errors)}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
@@ -212,7 +245,7 @@ const Deduction = () => {
               <button type="button" className="btn-close" id="closeEditModal" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body">
-              {editingDeduction && renderDeductionForm(editingDeduction, handleInputChange, true)}
+              {editingDeduction && renderDeductionForm(editingDeduction, handleInputChange, true, errors)}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
@@ -228,31 +261,38 @@ const Deduction = () => {
 };
 
 // Composant réutilisable pour le formulaire de déduction
-const renderDeductionForm = (deduction, handleChange, isEditing = false) => (
+const renderDeductionForm = (deduction, handleChange, isEditing = false, errors) => (
   <form>
-    <div className="mb-3">
-      <label className="form-label">Type de Déduction</label>
+    <div className="form-floating mb-3">
       <input
         type="text"
-        className="form-control"
+        className={`form-control ${errors.type ? 'is-invalid' : ''}`}
         name="type"
         value={deduction.type}
         onChange={(e) => handleChange(e, isEditing)}
         placeholder="Type (Ex: CNAPS, OSTIE, Absence)"
         required
       />
+      <label htmlFor="type">Type de Déduction</label>
+      {errors.type && (
+        <div className="invalid-feedback">{errors.type}</div>
+      )}
     </div>
-    <div className="mb-3">
-      <label className="form-label">Montant (Ar)</label>
+    <div className="form-floating mb-3">
       <input
         type="number"
-        className="form-control"
+        className={`form-control ${errors.amount ? 'is-invalid' : ''}`}
         name="amount"
         value={deduction.amount}
         onChange={(e) => handleChange(e, isEditing)}
         placeholder="Montant (Ar)"
+        min="1"
         required
       />
+      <label htmlFor="amount">Montant (Ar)</label>
+      {errors.amount && (
+        <div className="invalid-feedback">{errors.amount}</div>
+      )}
     </div>
   </form>
 );

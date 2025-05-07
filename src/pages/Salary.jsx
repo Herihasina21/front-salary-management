@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { SalaryService } from '../services/SalaryService';
-import { EmployeeService } from '../services/EmployeeService'; 
+import { EmployeeService } from '../services/EmployeeService';
 import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
 
 const INITIAL_SALARY = {
@@ -13,12 +13,13 @@ const Salary = () => {
   const [salaries, setSalaries] = useState([]);
   const [newSalary, setNewSalary] = useState(INITIAL_SALARY);
   const [editingSalary, setEditingSalary] = useState(null);
-  const [employees, setEmployees] = useState([]); 
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     fetchSalaries();
-    fetchEmployees(); 
+    fetchEmployees();
   }, []);
 
   const fetchSalaries = async () => {
@@ -28,7 +29,8 @@ const Salary = () => {
       setSalaries(response.data.data || []);
     } catch (error) {
       console.error('Erreur lors du chargement des salaires:', error);
-      toast.error(error.response?.data?.message || "Erreur lors du chargement des salaires");
+      const message = error.response?.data?.message || "Erreur lors du chargement des salaires";
+      toast.error(message);
     } finally {
       setLoading(false);
     }
@@ -40,26 +42,23 @@ const Salary = () => {
       setEmployees(response.data.data || []);
     } catch (error) {
       console.error('Erreur lors du chargement des employés:', error);
-      toast.error(error.response?.data?.message || "Erreur lors du chargement des employés");
+      const message = error.response?.data?.message || "Erreur lors du chargement des employés";
+      toast.error(message);
     }
   };
 
   const handleInputChange = (e, isEditing = false) => {
     const { name, value } = e.target;
+    setErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
+
+    // Prevent negative numbers
+    let newValue = value;
+    if (name === 'baseSalary' && value < 0) {
+      return; // Stop update, keep previous value
+    }
 
     const updateSalaryState = (salary) => {
-      if (name.startsWith('employee.')) {
-        const employeeKey = name.split('.')[1];
-        return {
-          ...salary,
-          employee: {
-            ...salary.employee,
-            [employeeKey]: value,
-          },
-        };
-      } else {
-        return { ...salary, [name]: value };
-      }
+      return { ...salary, [name]: newValue };
     };
 
     if (isEditing) {
@@ -69,46 +68,85 @@ const Salary = () => {
     }
   };
 
+  const validateForm = (salary) => {
+    let isValid = true;
+    const newErrors = {};
+
+    if (!salary.baseSalary || isNaN(salary.baseSalary) || parseFloat(salary.baseSalary) <= 0) {
+      newErrors.baseSalary = 'Le salaire de base doit être un nombre positif.';
+      isValid = false;
+    }
+
+    if (!salary.employeeId) {
+      newErrors.employeeId = 'L\'employé est obligatoire.';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const resetForm = () => {
     setNewSalary(INITIAL_SALARY);
     setEditingSalary(null);
+    setErrors({});
   };
 
+
   const addSalary = async () => {
+    if (!validateForm(newSalary)) {
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await SalaryService.createSalary(newSalary);
-      toast.success(response.data.message);
-      resetForm();
-      await fetchSalaries();
-      document.getElementById("closeAddModal")?.click();
+      if (response.data.success) {
+        toast.success(response.data.message);
+        resetForm();
+        await fetchSalaries();
+        document.getElementById("closeAddModal")?.click();
+      } else {
+        toast.error(response.data.message);
+      }
     } catch (error) {
       console.error('Erreur lors de l\'ajout du salaire:', error);
-      toast.error(error.response?.data?.message || "Erreur lors de l'ajout du salaire");
+      toast.error(error.response?.data?.message || "Une erreur inattendue est survenue");
     } finally {
       setLoading(false);
     }
   };
+
 
   const updateSalary = async () => {
     if (!editingSalary?.id) return;
+    if (!validateForm(editingSalary)) {
+      return;
+    }
+
     setLoading(true);
     try {
       const response = await SalaryService.updateSalary(editingSalary.id, editingSalary);
-      toast.success(response.data.message);
-      resetForm();
-      await fetchSalaries();
-      document.getElementById("closeEditModal")?.click();
+      if (response.data.success) {
+        toast.success(response.data.message);
+        resetForm();
+        await fetchSalaries();
+        document.getElementById("closeEditModal")?.click();
+      } else {
+        toast.error(response.data.message);
+      }
     } catch (error) {
       console.error('Erreur lors de la mise à jour du salaire:', error);
-      toast.error(error.response?.data?.message || "Erreur lors de la mise à jour du salaire");
+      toast.error(error.response?.data?.message || "Une erreur inattendue est survenue");
     } finally {
       setLoading(false);
     }
   };
 
+
   const handleEditClick = (salary) => {
     setEditingSalary({ ...salary });
+    setErrors({});
   };
 
   const deleteSalary = async (id) => {
@@ -158,9 +196,9 @@ const Salary = () => {
                   <MdAdd className="me-2" /> Ajouter un Salaire
                 </button>
               </div>
-              <div className="card-body px-0 pt-0 pb-2">
-                <div className="table-responsive p-0">
-                  <table className="table align-items-center mb-0">
+              <div className="card-body">
+                <div className="dt-responsive table-responsive">
+                  <table className="table table-striped table-bordered nowrap">
                     <thead>
                       <tr>
                         <th>ID</th>
@@ -177,13 +215,21 @@ const Salary = () => {
                           <tr key={salary.id}>
                             <td>{salary.id}</td>
                             <td>{salary.baseSalary}</td>
-                            <td>{employees.find(emp => emp.id === salary.employee?.id)?.name} {employees.find(emp => emp.id === salary.employee?.id)?.firstName} (ID: {salary.employee?.id})</td>
+                            <td>{employees.find(emp => emp.id === salary.employee?.id)?.name} {employees.find(emp => emp.id === salary.employee?.id)?.firstName}</td>
                             <td>
                               <div className="d-flex gap-2">
-                                <button className="btn btn-sm btn-warning me-2 d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#editModal" onClick={() => handleEditClick(salary)}>
+                                <button
+                                  className="btn btn-sm btn-warning me-2 d-flex align-items-center"
+                                  data-bs-toggle="modal"
+                                  data-bs-target="#editModal"
+                                  onClick={() => handleEditClick(salary)}
+                                >
                                   <MdEdit className="me-1" /> Modifier
                                 </button>
-                                <button className="btn btn-sm btn-danger d-flex align-items-center" onClick={() => deleteSalary(salary.id)}>
+                                <button
+                                  className="btn btn-sm btn-danger d-flex align-items-center"
+                                  onClick={() => deleteSalary(salary.id)}
+                                >
                                   <MdDelete className="me-1" /> Supprimer
                                 </button>
                               </div>
@@ -210,7 +256,7 @@ const Salary = () => {
               <button type="button" className="btn-close" id="closeAddModal" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body">
-              {renderSalaryForm(newSalary, handleInputChange, employees, false)}
+              {renderSalaryForm(newSalary, handleInputChange, employees, false, errors)}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
@@ -231,7 +277,7 @@ const Salary = () => {
               <button type="button" className="btn-close" id="closeEditModal" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body">
-              {editingSalary && renderSalaryForm(editingSalary, handleInputChange, employees, true)}
+              {editingSalary && renderSalaryForm(editingSalary, handleInputChange, employees, true, errors)}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
@@ -247,33 +293,41 @@ const Salary = () => {
 };
 
 // Composant réutilisable pour le formulaire de salaire
-const renderSalaryForm = (salary, handleChange, employees, isEditing = false) => (
+const renderSalaryForm = (salary, handleChange, employees, isEditing = false, errors) => (
   <form>
-    <div className="mb-3">
-      <label className="form-label">Salaire de base</label>
+    <div className="form-floating mb-3">
       <input
         type="number"
-        className="form-control"
+        className={`form-control ${errors.baseSalary ? 'is-invalid' : ''}`}
         name="baseSalary"
         value={salary.baseSalary}
         onChange={(e) => handleChange(e, isEditing)}
+        placeholder="Salaire de base"
+        min="1"
         required
       />
+      <label htmlFor="baseSalary">Salaire de base</label>
+      {errors.baseSalary && (
+        <div className="invalid-feedback">{errors.baseSalary}</div>
+      )}
     </div>
     <div className="mb-3">
-      <label className="form-label">Employé</label>
+      <label htmlFor="employeeId">Employé</label>
       <select
-        className="form-select"
+        className={`form-select ${errors.employeeId ? 'is-invalid' : ''}`}
         name="employeeId"
-        value={salary.employee?.id || ''}
+        value={salary.employeeId}
         onChange={(e) => handleChange(e, isEditing)}
         required
       >
         <option value="">-- Sélectionner un employé --</option>
         {employees.map((emp) => (
-          <option key={emp.id} value={emp.id}>{emp.name} {emp.firstName} (ID: {emp.id})</option>
+          <option key={emp.id} value={emp.id}>{emp.name} {emp.firstName}</option>
         ))}
       </select>
+      {errors.employeeId && (
+        <div className="invalid-feedback">{errors.employeeId}</div>
+      )}
     </div>
   </form>
 );

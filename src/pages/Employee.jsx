@@ -22,6 +22,7 @@ const Employee = () => {
   const [editingEmployee, setEditingEmployee] = useState(null);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const fetchEmployees = async () => {
     try {
@@ -52,6 +53,7 @@ const Employee = () => {
 
   const handleInputChange = (e, isEditing = false) => {
     const { name, value } = e.target;
+    setErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
 
     const updateEmployeeState = (employee) => {
       if (name === 'department') {
@@ -72,15 +74,65 @@ const Employee = () => {
     }
   };
 
+  const validateForm = (employee) => {
+    let isValid = true;
+    const newErrors = {};
+
+    if (!employee.name.trim()) {
+      newErrors.name = 'Le nom est obligatoire.';
+      isValid = false;
+    }
+    if (!employee.firstName.trim()) {
+      newErrors.firstName = 'Le prénom est obligatoire.';
+      isValid = false;
+    }
+    if (!employee.email.trim()) {
+      newErrors.email = "L'email est obligatoire.";
+      isValid = false;
+    } else if (!/\S+@\S+\.\S+/.test(employee.email)) {
+      newErrors.email = "L'email n'est pas valide.";
+      isValid = false;
+    }
+    if (!employee.phone.trim()) {
+      newErrors.phone = 'Le numéro de téléphone est obligatoire.';
+      isValid = false;
+    } else if (!/^\d+$/.test(employee.phone)) {
+      newErrors.phone = 'Le numéro de téléphone doit contenir uniquement des chiffres.';
+      isValid = false;
+    }
+    if (!employee.address.trim()) {
+      newErrors.address = "L'adresse est obligatoire.";
+      isValid = false;
+    }
+    if (!employee.position.trim()) {
+      newErrors.position = 'Le poste est obligatoire.';
+      isValid = false;
+    }
+    if (!employee.hireDate) {
+      newErrors.hireDate = "La date d'embauche est obligatoire.";
+      isValid = false;
+    }
+    if (!employee.contractType.trim()) {
+      newErrors.contractType = "Le type de contrat est obligatoire.";
+      isValid = false;
+    }
+    if (!employee.department?.id) {
+      newErrors.department = 'Le département est obligatoire.';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const resetForm = () => {
     setNewEmployee(INITIAL_EMPLOYEE);
     setEditingEmployee(null);
+    setErrors({});
   };
 
   const addEmployee = async () => {
-    const { name, firstName, email, phone, address, position, hireDate, contractType, department } = newEmployee;
-    if (!name || !firstName || !email || !phone || !address || !position || !hireDate || !contractType || !department?.name) {
-      toast.error('Tous les champs sont obligatoires.');
+    if (!validateForm(newEmployee)) {
       return;
     }
 
@@ -108,6 +160,9 @@ const Employee = () => {
 
   const updateEmployee = async () => {
     if (!editingEmployee?.id) return;
+    if (!validateForm(editingEmployee)) {
+      return;
+    }
     setLoading(true);
     try {
 
@@ -131,6 +186,7 @@ const Employee = () => {
 
   const handleEditClick = (employee) => {
     setEditingEmployee({ ...employee });
+    setErrors({});
   };
 
   const deleteEmployee = async (id) => {
@@ -193,9 +249,9 @@ const Employee = () => {
                   <MdPersonAdd className="me-2" /> Ajouter un Employé
                 </button>
               </div>
-              <div className="card-body px-0 pt-0 pb-2">
-                <div className="table-responsive p-0">
-                  <table className="table align-items-center mb-0">
+              <div className="card-body">
+                <div className="dt-responsive table-responsive">
+                  <table className="table table-striped table-bordered nowrap">
                     <thead>
                       <tr>
                         <th>ID</th>
@@ -265,7 +321,7 @@ const Employee = () => {
               <button type="button" className="btn-close" id="closeAddModal" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body">
-              {renderEmployeeForm(newEmployee, handleInputChange, departments, false)}
+              {renderEmployeeForm(newEmployee, handleInputChange, departments, false, errors)}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
@@ -286,7 +342,7 @@ const Employee = () => {
               <button type="button" className="btn-close" id="closeEditModal" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body">
-              {editingEmployee && renderEmployeeForm(editingEmployee, handleInputChange, departments, true)}
+              {editingEmployee && renderEmployeeForm(editingEmployee, handleInputChange, departments, true, errors)}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
@@ -301,104 +357,183 @@ const Employee = () => {
   );
 };
 
-const renderEmployeeForm = (employee, handleChange, departments, isEditing = false) => (
-  <form>
-    <div className="mb-3">
-      <label className="form-label">Nom</label>
-      <input
-        type="text"
-        className="form-control"
-        name="name"
-        value={employee.name}
-        onChange={(e) => handleChange(e, isEditing)}
-      />
-    </div>
-    <div className="mb-3">
-      <label className="form-label">Prénom</label>
-      <input
-        type="text"
-        className="form-control"
-        name="firstName"
-        value={employee.firstName}
-        onChange={(e) => handleChange(e, isEditing)}
-      />
-    </div>
-    <div className="mb-3">
-      <label className="form-label">Email</label>
-      <input
-        type="email"
-        className="form-control"
-        name="email"
-        value={employee.email}
-        onChange={(e) => handleChange(e, isEditing)}
-      />
-    </div>
-    <div className="mb-3">
-      <label className="form-label">Téléphone</label>
-      <input
-        type="text"
-        className="form-control"
-        name="phone"
-        value={employee.phone}
-        onChange={(e) => handleChange(e, isEditing)}
-      />
-    </div>
-    <div className="mb-3">
-      <label className="form-label">Adresse</label>
-      <input
-        type="text"
-        className="form-control"
-        name="address"
-        value={employee.address}
-        onChange={(e) => handleChange(e, isEditing)}
-      />
-    </div>
-    <div className="mb-3">
-      <label className="form-label">Poste</label>
-      <input
-        type="text"
-        className="form-control"
-        name="position"
-        value={employee.position}
-        onChange={(e) => handleChange(e, isEditing)}
-      />
-    </div>
-    <div className="mb-3">
-      <label className="form-label">Date d'embauche</label>
-      <input
-        type="date"
-        className="form-control"
-        name="hireDate"
-        value={employee.hireDate}
-        onChange={(e) => handleChange(e, isEditing)}
-      />
-    </div>
-    <div className="mb-3">
-      <label className="form-label">Type de contrat</label>
-      <input
-        type="text"
-        className="form-control"
-        name="contractType"
-        value={employee.contractType}
-        onChange={(e) => handleChange(e, isEditing)}
-      />
-    </div>
-    <div className="mb-3">
-      <label className="form-label">Département</label>
-      <select
-        className="form-select"
-        name="department"
-        value={employee.department?.id || ''}
-        onChange={(e) => handleChange(e, isEditing)}
-      >
-        <option value="">-- Sélectionner un département --</option>
-        {departments.map(dep => (
-          <option key={dep.id} value={dep.id}>{dep.name}</option>
-        ))}
-      </select>
-    </div>
-  </form>
-);
+const renderEmployeeForm = (employee, handleChange, departments, isEditing, errors) => (
+  <div>
+    {/* Onglets */}
+    <ul className="nav nav-tabs" id="employeeTabs" role="tablist">
+      <li className="nav-item" role="presentation">
+        <button className="nav-link active" id="personal-tab" data-bs-toggle="tab" data-bs-target="#personal" type="button" role="tab">
+          Informations personnelles
+        </button>
+      </li>
+      <li className="nav-item" role="presentation">
+        <button className="nav-link" id="job-tab" data-bs-toggle="tab" data-bs-target="#job" type="button" role="tab">
+          Informations professionnelles
+        </button>
+      </li>
+    </ul>
 
+    {/* Contenu des onglets */}
+    <div className="tab-content mt-3" id="employeeTabsContent">
+      {/* Onglet personnel */}
+      <div className="tab-pane fade show active" id="personal" role="tabpanel">
+        <div className="form-floating mb-3">
+          <input
+            type="text"
+            id="floatingName"
+            name="name"
+            className={`form-control ${errors.name ? 'is-invalid' : ''}`}
+            placeholder="Nom"
+            value={employee.name}
+            onChange={(e) => handleChange(e, isEditing)}
+          />
+          <label htmlFor="floatingName">Nom</label>
+        </div>
+        {errors.name && (
+          <div className="invalid-feedback d-block mt-1">{errors.name}</div>
+        )}
+
+        <div className="form-floating mb-3">
+          <input
+            type="text"
+            id="floatingFirstName"
+            name="firstName"
+            className={`form-control ${errors.firstName ? 'is-invalid' : ''}`}
+            placeholder="Prénom"
+            value={employee.firstName}
+            onChange={(e) => handleChange(e, isEditing)}
+          />
+          <label htmlFor="floatingFirstName">Prénom</label>
+        </div>
+        {errors.firstName && (
+          <div className="invalid-feedback d-block mt-1">{errors.firstName}</div>
+        )}
+
+        <div className="form-floating mb-3">
+          <input
+            type="email"
+            id="floatingEmail"
+            name="email"
+            className={`form-control ${errors.email ? 'is-invalid' : ''}`}
+            placeholder="Email"
+            value={employee.email}
+            onChange={(e) => handleChange(e, isEditing)}
+          />
+          <label htmlFor="floatingEmail">Email</label>
+        </div>
+        {errors.email && (
+          <div className="invalid-feedback d-block mt-1">{errors.email}</div>
+        )}
+
+        <div className="form-floating mb-3">
+          <input
+            type="text"
+            id="floatingPhone"
+            name="phone"
+            className={`form-control ${errors.phone ? 'is-invalid' : ''}`}
+            placeholder="Téléphone"
+            value={employee.phone}
+            onChange={(e) => handleChange(e, isEditing)}
+          />
+          <label htmlFor="floatingPhone">Téléphone</label>
+        </div>
+        {errors.phone && (
+          <div className="invalid-feedback d-block mt-1">{errors.phone}</div>
+        )}
+
+        <div className="form-floating mb-3">
+          <input
+            type="text"
+            id="floatingAddress"
+            name="address"
+            className={`form-control ${errors.address ? 'is-invalid' : ''}`}
+            placeholder="Adresse"
+            value={employee.address}
+            onChange={(e) => handleChange(e, isEditing)}
+          />
+          <label htmlFor="floatingAddress">Adresse</label>
+        </div>
+        {errors.address && (
+          <div className="invalid-feedback d-block mt-1">{errors.address}</div>
+        )}
+      </div>
+
+      {/* Onglet professionnel */}
+      <div className="tab-pane fade" id="job" role="tabpanel">
+        <div className={`mb-3 ${errors.position ? 'form-group position-relative' : ''}`}>
+          <label className="form-label">Poste</label>
+          <select
+            name="position"
+            className={`form-select ${errors.position ? 'is-invalid' : ''}`}
+            value={employee.position}
+            onChange={(e) => handleChange(e, isEditing)}
+          >
+            <option value="">-- Sélectionner --</option>
+            <option value="Développeur">Développeur</option>
+            <option value="Designer">Designer</option>
+            <option value="Chef de projet">Chef de projet</option>
+            <option value="RH">RH</option>
+            <option value="Comptable">Comptable</option>
+          </select>
+          {errors.position && (
+            <div className="invalid-feedback">{errors.position}</div>
+          )}
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label">Date d'embauche</label>
+          <input
+            type="date"
+            className={`form-control ${errors.hireDate ? 'is-invalid' : ''}`}
+            name="hireDate"
+            value={employee.hireDate}
+            onChange={(e) => handleChange(e, isEditing)}
+          />
+          {errors.hireDate && (
+            <div className="invalid-feedback" style={{ position: 'absolute' }}>{errors.hireDate}</div>
+          )}
+        </div>
+
+        <div className={`mb-3 ${errors.contractType ? 'form-group position-relative' : ''}`}>
+          <label className="form-label">Type de contrat</label>
+          <select
+            name="contractType"
+            className={`form-select ${errors.contractType ? 'is-invalid' : ''}`}
+            value={employee.contractType}
+            onChange={(e) => handleChange(e, isEditing)}
+          >
+            <option value="">-- Sélectionner --</option>
+            <option value="CDI">CDI</option>
+            <option value="CDD">CDD</option>
+            <option value="Stage">Stage</option>
+            <option value="Freelance">Freelance</option>
+            <option value="Alternance">Alternance</option>
+          </select>
+          {errors.contractType && (
+            <div className="invalid-feedback">{errors.contractType}</div>
+          )}
+        </div>
+
+        <div className={`mb-3 ${errors.department ? 'form-group position-relative' : ''}`}>
+          <label className="form-label">Département</label>
+          <select
+            className={`form-select ${errors.department ? 'is-invalid' : ''}`}
+            name="department"
+            value={employee.department?.id || ""}
+            onChange={(e) => handleChange(e, isEditing)}
+          >
+            <option value="">-- Sélectionner --</option>
+            {departments.map(dep => (
+              <option key={dep.id} value={dep.id}>{dep.name}</option>
+            ))}
+          </select>
+          {errors.department && (
+            <div className="invalid-feedback">{errors.department}</div>
+          )}
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
 export default Employee;

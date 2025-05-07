@@ -14,6 +14,7 @@ const Department = () => {
   const [newDepartment, setNewDepartment] = useState(INITIAL_DEPARTMENT);
   const [editingDepartment, setEditingDepartment] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [errors, setErrors] = useState({});
 
   const fetchDepartments = async () => {
     try {
@@ -41,14 +42,32 @@ const Department = () => {
     }
   };
 
+
+  const validateForm = (department) => {
+    let isValid = true;
+    const newErrors = {};
+
+    if (!department.name.trim()) {
+      newErrors.name = 'Le nom du départment est obligatoire.';
+      isValid = false;
+    }
+    if (!department.code.trim()) {
+      newErrors.code = 'Le code du département est obligatoire.';
+      isValid = false;
+    }
+
+    setErrors(newErrors);
+    return isValid;
+  };
+
   const resetForm = () => {
     setNewDepartment(INITIAL_DEPARTMENT);
     setEditingDepartment(null);
+    setErrors({});
   };
 
   const addDepartment = async () => {
-    if (!newDepartment.name || !newDepartment.code) {
-      toast.error('Le nom et le code du département sont requis.');
+    if (!validateForm(newDepartment)) {
       return;
     }
 
@@ -70,8 +89,8 @@ const Department = () => {
   };
 
   const updateDepartment = async () => {
-    if (!editingDepartment?.name || !editingDepartment?.code) {
-      toast.error('Le nom et le code du département sont requis.');
+    if (!editingDepartment?.id) return;
+    if (!validateForm(editingDepartment)) {
       return;
     }
 
@@ -112,32 +131,8 @@ const Department = () => {
 
   const handleEditClick = (department) => {
     setEditingDepartment({ ...department });
+    setErrors({});
   };
-
-  const renderDepartmentForm = (department, handleChange, isEditing = false) => (
-    <form>
-      <div className="mb-3">
-        <label className="form-label">Nom du département</label>
-        <input
-          type="text"
-          className="form-control"
-          name="name"
-          value={department.name}
-          onChange={(e) => handleChange(e, isEditing)}
-        />
-      </div>
-      <div className="mb-3">
-        <label className="form-label">Code du département</label>
-        <input
-          type="text"
-          className="form-control"
-          name="code"
-          value={department.code}
-          onChange={(e) => handleChange(e, isEditing)}
-        />
-      </div>
-    </form>
-  );
 
   return (
     <div className="pc-container">
@@ -170,9 +165,9 @@ const Department = () => {
                   <FaPlus className="me-2" /> Ajouter un Département
                 </button>
               </div>
-              <div className="card-body px-0 pt-0 pb-2">
-                <div className="table-responsive p-0">
-                  <table className="table align-items-center mb-0">
+              <div className="card-body">
+                <div className="dt-responsive table-responsive">
+                  <table className="table table-striped table-bordered nowrap">
                     <thead>
                       <tr>
                         <th>ID</th>
@@ -183,7 +178,7 @@ const Department = () => {
                     </thead>
                     <tbody>
                       {departments.length === 0 ? (
-                        <tr><td colSpan="4">Aucun département trouvé</td></tr>
+                        <tr><td colSpan="6">Aucun département trouvé</td></tr>
                       ) : (
                         departments.map(dept => (
                           <tr key={dept.id}>
@@ -229,7 +224,7 @@ const Department = () => {
               <button type="button" className="btn-close" id="closeAddModal" data-bs-dismiss="modal" aria-label="Close" onClick={resetForm}></button>
             </div>
             <div className="modal-body">
-              {renderDepartmentForm(newDepartment, handleInputChange)}
+              {renderDepartmentForm(newDepartment, handleInputChange, false, errors)}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
@@ -250,7 +245,7 @@ const Department = () => {
               <button type="button" className="btn-close" id="closeEditModal" data-bs-dismiss="modal" aria-label="Close" onClick={resetForm}></button>
             </div>
             <div className="modal-body">
-              {editingDepartment && renderDepartmentForm(editingDepartment, handleInputChange, true)}
+              {editingDepartment && renderDepartmentForm(editingDepartment, handleInputChange, true, errors)}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
@@ -264,5 +259,35 @@ const Department = () => {
     </div>
   );
 };
+
+const renderDepartmentForm = (department, handleChange, isEditing = false, errors) => (
+  <form>
+    <div className={`form-floating mb-3 ${errors.name ? 'is-invalid' : ''}`}>
+      <input
+        type="text"
+        className={`form-control ${errors.name ? 'is-invalid' : ''}`}
+        name="name"
+        placeholder="Nom du département"
+        value={department.name}
+        onChange={(e) => handleChange(e, isEditing)}
+      />
+      <label htmlFor="floatingName">Nom du département</label>
+      {errors.name && <div className="invalid-feedback">{errors.name}</div>}
+    </div>
+
+    <div className={`form-floating mb-3 ${errors.code ? 'is-invalid' : ''}`}>
+      <input
+        type="text"
+        className={`form-control ${errors.code ? 'is-invalid' : ''}`}
+        name="code"
+        placeholder="Code du département"
+        value={department.code}
+        onChange={(e) => handleChange(e, isEditing)}
+      />
+      <label className="floatingCode">Code du département</label>
+      {errors.code && <div className="invalid-feedback">{errors.code}</div>}
+    </div>
+  </form>
+);
 
 export default Department;
