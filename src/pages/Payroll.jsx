@@ -10,8 +10,8 @@ const INITIAL_PAYROLL = {
   periodStart: '',
   periodEnd: '',
   employeeId: '',
-  bonusId: [],
-  deductionId: [],
+  bonuses: null,
+  deductions: null,
 };
 
 const Payroll = () => {
@@ -106,23 +106,13 @@ const Payroll = () => {
     }
   };
 
-  const calculateNetSalary = (payroll, bonuses = [], deductions = []) => {
-    // Find employee salary
-    const employee = employees.find(emp => emp.id === payroll.employeeId);
-    const baseSalary = employee?.salary?.baseSalary || 0;
-
-    // Calculate total bonuses
-    const totalBonus = bonuses
-      .filter(bonus => payroll.bonusId.includes(bonus.id))
-      .reduce((sum, bonus) => sum + bonus.amount, 0);
-
-    // Calculate total deductions
-    const totalDeduction = deductions
-      .filter(deduction => payroll.deductionId.includes(deduction.id))
-      .reduce((sum, deduction) => sum + deduction.amount, 0);
-
-    return baseSalary + totalBonus - totalDeduction;
-  };
+  const buildPayrollPayload = (payroll) => ({
+    periodStart: payroll.periodStart,
+    periodEnd: payroll.periodEnd,
+    employeeId: payroll.employeeId,
+    bonuses: (payroll.bonusId || []).map(id => ({ id: parseInt(id) })),
+    deductions: (payroll.deductionId || []).map(id => ({ id: parseInt(id) }))
+  });
 
   const validateForm = (payroll) => {
     let isValid = true;
@@ -158,11 +148,8 @@ const Payroll = () => {
 
     setLoading(true);
     try {
-      const netSalary = calculateNetSalary(newPayroll, allBonuses, allDeductions);
-      const payrollDataToSend = {
-        ...newPayroll,
-        netSalary: netSalary,
-      };
+      const payrollDataToSend = buildPayrollPayload({
+        ...newPayroll});
       const response = await PayrollService.createPayroll(payrollDataToSend);
       const message = response.data.message;
       toast.success(message);
@@ -186,11 +173,8 @@ const Payroll = () => {
     }
     setLoading(true);
     try {
-      const netSalary = calculateNetSalary(editingPayroll, allBonuses, allDeductions);
-      const payrollDataToSend = {
-        ...editingPayroll,
-        netSalary: netSalary,
-      };
+      const payrollDataToSend = buildPayrollPayload({
+        ...editingPayroll});
       const response = await PayrollService.updatePayroll(editingPayroll.id, payrollDataToSend);
       const message = response.data.message;
       toast.success(message);
