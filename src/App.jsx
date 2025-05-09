@@ -10,6 +10,7 @@ import Department from './pages/Department';
 import Employee from './pages/Employee';
 import Payroll from './pages/Payroll';
 import Salary from './pages/Salary';
+import Home from './pages/Home';
 
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
@@ -51,6 +52,7 @@ function LayoutWrapper() {
       <Navbar />
       <Sidebar />
       <Routes>
+        <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/employes" element={<Employee />} />
         <Route path="/department" element={<Department />} />

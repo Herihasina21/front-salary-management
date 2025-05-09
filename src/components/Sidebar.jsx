@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { MdDashboard, MdAttachMoney, MdAssignment, MdStar, MdRemove, MdBusinessCenter } from "react-icons/md"; // Material Design Icons
+import { MdBusinessCenter, MdHome, MdDashboard, MdApartment, MdPeople, MdAttachMoney, MdAssignment, MdStar, MdRemoveCircleOutline } from "react-icons/md"; // Material Design Icons
 
 function Sidebar() {
   const location = useLocation();
@@ -14,6 +14,13 @@ function Sidebar() {
         </div>
         <div className="navbar-content">
           <ul className="pc-navbar">
+            <li className={`pc-item ${location.pathname === '/' ? 'active' : ''}`}>
+              <Link to="/" className="pc-link">
+                <MdHome className="pc-micon" />
+                <span className="pc-mtext">Accueil</span>
+              </Link>
+            </li>
+
             <li className={`pc-item ${location.pathname === '/dashboard' ? 'active' : ''}`}>
               <Link to="/dashboard" className="pc-link">
                 <MdDashboard className="pc-micon" />
@@ -26,17 +33,17 @@ function Sidebar() {
               <i className="ti ti-dashboard"></i>
             </li>
 
-            <li className={`pc-item ${location.pathname === '/employes' ? 'active' : ''}`}>
-              <Link to="/employes" className="pc-link">
-                <span className="pc-micon"><i className="ti ti-user"></i></span>
-                <span className="pc-mtext">Employés</span>
+            <li className={`pc-item ${location.pathname === '/department' ? 'active' : ''}`}>
+              <Link to="/department" className="pc-link">
+                <MdApartment className="pc-micon"/>
+                <span className="pc-mtext">Départements</span>
               </Link>
             </li>
 
-            <li className={`pc-item ${location.pathname === '/department' ? 'active' : ''}`}>
-              <Link to="/department" className="pc-link">
-                <span className="pc-micon"><i className="ti ti-building"></i></span>
-                <span className="pc-mtext">Départements</span>
+            <li className={`pc-item ${location.pathname === '/employes' ? 'active' : ''}`}>
+              <Link to="/employes" className="pc-link">
+                <MdPeople className="pc-micon" />
+                <span className="pc-mtext">Employés</span>
               </Link>
             </li>
 
@@ -44,13 +51,6 @@ function Sidebar() {
               <Link to="/salary" className="pc-link">
                 <MdAttachMoney className="pc-micon" />
                 <span className="pc-mtext">Salaires</span>
-              </Link>
-            </li>
-
-            <li className={`pc-item ${location.pathname === '/payroll' ? 'active' : ''}`}>
-              <Link to="/payroll" className="pc-link">
-                <MdAssignment className="pc-micon" />
-                <span className="pc-mtext">Fiches de Paie</span>
               </Link>
             </li>
 
@@ -63,10 +63,18 @@ function Sidebar() {
 
             <li className={`pc-item ${location.pathname === '/deduction' ? 'active' : ''}`}>
               <Link to="/deduction" className="pc-link">
-                <MdRemove className="pc-micon" />
+                <MdRemoveCircleOutline className="pc-micon" />
                 <span className="pc-mtext">Déductions</span>
               </Link>
             </li>
+
+            <li className={`pc-item ${location.pathname === '/payroll' ? 'active' : ''}`}>
+              <Link to="/payroll" className="pc-link">
+                <MdAssignment className="pc-micon" />
+                <span className="pc-mtext">Fiches de Paie</span>
+              </Link>
+            </li>
+
           </ul>
         </div>
       </div>
