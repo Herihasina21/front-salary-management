@@ -18,4 +18,9 @@ export const PayrollService = {
     deletePayroll: async (id) => {
         return axios.delete(`${API_URL}/${id}`);
     },
+
+    downloadPayroll: async (id) => {
+        return axios.get(`${API_URL}/${id}/pdf`, { responseType: 'blob' });
+    }
+
 };

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { PayrollService } from '../services/PayrollService';
-import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
+import {MdAdd, MdEdit, MdDelete, MdFontDownload} from "react-icons/md";
 import { EmployeeService } from "../services/EmployeeService.jsx";
 import { BonusService } from '../services/BonusService.jsx'; 
 import { DeductionService } from '../services/DeductionService.jsx'; 
@@ -219,6 +219,32 @@ const Payroll = () => {
     }
   };
 
+  const downloadPayroll = async (id) => {
+    try {
+      setLoading(true);
+
+      const response = await PayrollService.downloadPayroll(id); // Appel API
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      const url = window.URL.createObjectURL(blob);
+
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `fiche_paie_${id}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      window.URL.revokeObjectURL(url);
+      toast.success("Fiche de paie téléchargée avec succès");
+    } catch (error) {
+      console.error(error);
+      const message = error.response?.data?.message || "Erreur lors du téléchargement de la fiche de paie";
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const renderPayrollForm = (payroll, handleChange, employees, isEditing = false, errors, allBonuses, allDeductions) => (
     <form>
       <div className="mb-3">
@@ -358,11 +384,18 @@ const Payroll = () => {
                               <td>{payroll.netSalary}</td>
                               <td>
                                 <div className="d-flex gap-2">
-                                  <button className="btn btn-sm btn-warning me-2 d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#editModal" onClick={() => handleEditClick(payroll)}>
-                                    <MdEdit className="me-1" /> Modifier
+                                  <button className="btn btn-sm btn-warning me-2 d-flex align-items-center"
+                                          data-bs-toggle="modal" data-bs-target="#editModal"
+                                          onClick={() => handleEditClick(payroll)}>
+                                    <MdEdit className="me-1"/> Modifier
                                   </button>
-                                  <button className="btn btn-sm btn-danger d-flex align-items-center" onClick={() => deletePayroll(payroll.id)}>
-                                    <MdDelete className="me-1" /> Supprimer
+                                  <button className="btn btn-sm btn-danger d-flex align-items-center"
+                                          onClick={() => deletePayroll(payroll.id)}>
+                                    <MdDelete className="me-1"/> Supprimer
+                                  </button>
+                                  <button className="btn btn-sm btn-primary d-flex align-items-center"
+                                          onClick={() => downloadPayroll(payroll.id)}>
+                                    <MdFontDownload className="me-1"/> Downloader Fiche de Paie
                                   </button>
                                 </div>
                               </td>
