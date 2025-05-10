@@ -268,7 +268,7 @@ const Employee = () => {
                     </thead>
                     <tbody>
                       {employees.length === 0 ? (
-                        <tr><td colSpan="6">Aucun employé trouvé</td></tr>
+                        <tr><td colSpan="10">Aucun employé trouvé</td></tr>
                       ) : (
                         employees.map(emp => (
                           <tr key={emp.id}>
