@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { PayrollService } from '../services/PayrollService';
-import { MdAdd, MdEdit, MdDelete, MdFileDownload } from "react-icons/md";
+import {MdAdd, MdEdit, MdDelete, MdFileDownload, MdMessage, MdEmail} from "react-icons/md";
 import { EmployeeService } from "../services/EmployeeService.jsx";
 import { BonusService } from '../services/BonusService.jsx';
 import { DeductionService } from '../services/DeductionService.jsx';
@@ -268,6 +268,22 @@ const Payroll = () => {
     }
   };
 
+  const sendPayrollEmail = async (id) => {
+    if (window.confirm("Confirmer l'envoi de la fiche de paie par email ?")) {
+      try {
+        setLoading(true);
+        const response = await PayrollService.sendPayrollEmail(id, newPayroll.email);
+        const message = response.data.message;
+        toast.success(message);
+      } catch (error) {
+        console.error(error);
+        const message = error.response?.data?.message || "Erreur lors de l'envoi de la fiche de paie par email";
+        toast.error(message);
+      } finally {
+        setLoading(false);
+      }
+    }
+  }
   const downloadPayroll = async (id) => {
     try {
       setLoading(true);
@@ -293,6 +309,7 @@ const Payroll = () => {
       setLoading(false);
     }
   };
+
 
   const renderPayrollForm = (payroll, handleChange, employees, isEditing = false, errors, allBonuses, allDeductions) => (
     <form>
@@ -433,18 +450,22 @@ const Payroll = () => {
                               <td>{payroll.netSalary}</td>
                               <td>
                                 <div className="d-flex gap-2">
-                                  <button className="btn btn-sm btn-primary d-flex align-items-center"
-                                    onClick={() => downloadPayroll(payroll.id)}>
-                                    <MdFileDownload className="me-1" /> téléchargé le fiche de paie
+                                  <button className="btn btn-sm btn-secondary d-flex align-items-center"
+                                          onClick={() => sendPayrollEmail(payroll.id)}>
+                                    <MdEmail className="me-1"/> Envoyer
                                   </button>
-                                  <button className="btn btn-sm btn-warning me-2 d-flex align-items-center"
-                                    data-bs-toggle="modal" data-bs-target="#editModal"
-                                    onClick={() => handleEditClick(payroll)}>
-                                    <MdEdit className="me-1" /> Modifier
+                                  <button className="btn btn-sm btn-primary d-flex align-items-center"
+                                          onClick={() => downloadPayroll(payroll.id)}>
+                                    <MdFileDownload className="me-1"/> Télécharger
+                                  </button>
+                                  <button className="btn btn-sm btn-warning d-flex align-items-center"
+                                          data-bs-toggle="modal" data-bs-target="#editModal"
+                                          onClick={() => handleEditClick(payroll)}>
+                                    <MdEdit className="me-1"/> Modifier
                                   </button>
                                   <button className="btn btn-sm btn-danger d-flex align-items-center"
-                                    onClick={() => deletePayroll(payroll.id)}>
-                                    <MdDelete className="me-1" /> Supprimer
+                                          onClick={() => deletePayroll(payroll.id)}>
+                                    <MdDelete className="me-1"/> Supprimer
                                   </button>
                                 </div>
                               </td>

@@ -21,6 +21,10 @@ export const PayrollService = {
 
     downloadPayroll: async (id) => {
         return axios.get(`${API_URL}/${id}/pdf`, { responseType: 'blob' });
-    }
+    },
+
+    sendPayrollEmail: async (id, email) => {
+        return axios.get(`${API_URL}/${id}/email`, { email });
+    },
 
 };
