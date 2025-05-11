@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { PayrollService } from '../services/PayrollService';
-import {MdAdd, MdEdit, MdDelete, MdFontDownload} from "react-icons/md";
+import { MdAdd, MdEdit, MdDelete, MdFileDownload } from "react-icons/md";
 import { EmployeeService } from "../services/EmployeeService.jsx";
-import { BonusService } from '../services/BonusService.jsx'; 
-import { DeductionService } from '../services/DeductionService.jsx'; 
+import { BonusService } from '../services/BonusService.jsx';
+import { DeductionService } from '../services/DeductionService.jsx';
 
 const INITIAL_PAYROLL = {
   periodStart: '',
@@ -106,13 +106,27 @@ const Payroll = () => {
     }
   };
 
-  const buildPayrollPayload = (payroll) => ({
-    periodStart: payroll.periodStart,
-    periodEnd: payroll.periodEnd,
-    employeeId: payroll.employeeId,
-    bonuses: (payroll.bonusId || []).map(id => ({ id: parseInt(id) })),
-    deductions: (payroll.deductionId || []).map(id => ({ id: parseInt(id) }))
-  });
+  const buildPayrollPayload = (payroll) => {
+    // Convertir les dates du format input (YYYY-MM-DD) vers le format attendu par l'API
+    const formatDateForAPI = (dateStr) => {
+      if (!dateStr) return null;
+      // Si la date est déjà au format dd/MM/yyyy
+      if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) {
+        return dateStr;
+      }
+      // Convertir de YYYY-MM-DD à dd/MM/yyyy
+      const [year, month, day] = dateStr.split('-');
+      return `${day}/${month}/${year}`;
+    };
+
+    return {
+      periodStart: formatDateForAPI(payroll.periodStart),
+      periodEnd: formatDateForAPI(payroll.periodEnd),
+      employeeId: payroll.employeeId,
+      bonuses: (payroll.bonusId || []).map(id => ({ id: parseInt(id) })),
+      deductions: (payroll.deductionId || []).map(id => ({ id: parseInt(id) }))
+    };
+  };
 
   const validateForm = (payroll) => {
     let isValid = true;
@@ -149,7 +163,8 @@ const Payroll = () => {
     setLoading(true);
     try {
       const payrollDataToSend = buildPayrollPayload({
-        ...newPayroll});
+        ...newPayroll
+      });
       const response = await PayrollService.createPayroll(payrollDataToSend);
       const message = response.data.message;
       toast.success(message);
@@ -157,10 +172,15 @@ const Payroll = () => {
       await fetchPayrolls();
       document.getElementById("closeAddModal")?.click();
     } catch (error) {
-      console.error(error);
-      console.error("Réponse d'erreur (ajout) :", error.response);
-      const message = error.response?.data?.message || "Erreur lors de l'ajout de la fiche de paie";
-      toast.error(message);
+      let errorMessage = "Erreur création fiche de paie";
+
+      if (error.response) {
+        errorMessage = error.response.data.message || errorMessage;
+      } else if (error.message.includes("Network Error")) {
+        errorMessage = "Problème de connexion au serveur";
+      }
+
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -174,7 +194,8 @@ const Payroll = () => {
     setLoading(true);
     try {
       const payrollDataToSend = buildPayrollPayload({
-        ...editingPayroll});
+        ...editingPayroll
+      });
       const response = await PayrollService.updatePayroll(editingPayroll.id, payrollDataToSend);
       const message = response.data.message;
       toast.success(message);
@@ -193,11 +214,39 @@ const Payroll = () => {
   const handleEditClick = (payroll) => {
     setEditingPayroll({
       ...payroll,
+      periodStart: formatDateForInput(payroll.periodStart),
+      periodEnd: formatDateForInput(payroll.periodEnd),
       bonusId: payroll.bonuses?.map(bonus => bonus.id) || [],
       deductionId: payroll.deductions?.map(deduction => deduction.id) || [],
-      // netSalary: payroll.netSalary || 0, // Supprimé de la mise à jour de l'état
     });
     setErrors({});
+  };
+
+  const formatDateForInput = (dateString) => {
+    if (!dateString) return '';
+
+    // Si la date est déjà au format YYYY-MM-DD
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+      return dateString;
+    }
+
+    // Si la date est au format dd/MM/yyyy
+    if (/^\d{2}\/\d{2}\/\d{4}$/.test(dateString)) {
+      const [day, month, year] = dateString.split('/');
+      return `${year}-${month}-${day}`;
+    }
+
+    // Pour les objets Date ou autres formats
+    try {
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch (e) {
+      console.error("Erreur de formatage de date", e);
+      return '';
+    }
   };
 
   const deletePayroll = async (id) => {
@@ -374,28 +423,28 @@ const Payroll = () => {
                         <tr><td colSpan="6">Aucune fiche de paie trouvée</td></tr>
                       ) : (
                         payrolls.map(payroll => {
-                          const employeeName = employees.find(emp => emp.id === payroll.employeeId)?.name || 'N/A';
+                          const employee = employees.find(emp => emp.id === payroll.employeeId);
                           return (
                             <tr key={payroll.id}>
                               <td>{payroll.id}</td>
                               <td>{payroll.periodStart}</td>
                               <td>{payroll.periodEnd}</td>
-                              <td>{employeeName}</td>
+                              <td>{employee ? `${employee.name} ${employee.firstName} ` : ''}</td>
                               <td>{payroll.netSalary}</td>
                               <td>
                                 <div className="d-flex gap-2">
+                                  <button className="btn btn-sm btn-primary d-flex align-items-center"
+                                    onClick={() => downloadPayroll(payroll.id)}>
+                                    <MdFileDownload className="me-1" /> téléchargé le fiche de paie
+                                  </button>
                                   <button className="btn btn-sm btn-warning me-2 d-flex align-items-center"
-                                          data-bs-toggle="modal" data-bs-target="#editModal"
-                                          onClick={() => handleEditClick(payroll)}>
-                                    <MdEdit className="me-1"/> Modifier
+                                    data-bs-toggle="modal" data-bs-target="#editModal"
+                                    onClick={() => handleEditClick(payroll)}>
+                                    <MdEdit className="me-1" /> Modifier
                                   </button>
                                   <button className="btn btn-sm btn-danger d-flex align-items-center"
-                                          onClick={() => deletePayroll(payroll.id)}>
-                                    <MdDelete className="me-1"/> Supprimer
-                                  </button>
-                                  <button className="btn btn-sm btn-primary d-flex align-items-center"
-                                          onClick={() => downloadPayroll(payroll.id)}>
-                                    <MdFontDownload className="me-1"/> Downloader Fiche de Paie
+                                    onClick={() => deletePayroll(payroll.id)}>
+                                    <MdDelete className="me-1" /> Supprimer
                                   </button>
                                 </div>
                               </td>

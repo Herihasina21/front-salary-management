@@ -23,6 +23,8 @@ const Employee = () => {
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const fetchEmployees = async () => {
     try {
@@ -138,7 +140,6 @@ const Employee = () => {
 
     setLoading(true);
     try {
-
       const dto = toEmployeeDTO(newEmployee);
       const response = await EmployeeService.createEmployee(dto);
 
@@ -147,10 +148,9 @@ const Employee = () => {
 
       resetForm();
       await fetchEmployees();
-      document.getElementById("closeAddModal")?.click();
+      setShowAddModal(false);
     } catch (error) {
       console.error(error);
-      console.error("Réponse d'erreur (ajout) :", error.response);
       const message = error.response?.data?.message || "Erreur lors de l'ajout";
       toast.error(message);
     } finally {
@@ -165,7 +165,6 @@ const Employee = () => {
     }
     setLoading(true);
     try {
-
       const dto = toEmployeeDTO(editingEmployee);
       const response = await EmployeeService.updateEmployee(editingEmployee.id, dto);
 
@@ -174,7 +173,7 @@ const Employee = () => {
 
       resetForm();
       await fetchEmployees();
-      document.getElementById("closeEditModal")?.click();
+      setShowEditModal(false);
     } catch (error) {
       console.error(error);
       const message = error.response?.data?.message;
@@ -187,6 +186,7 @@ const Employee = () => {
   const handleEditClick = (employee) => {
     setEditingEmployee({ ...employee });
     setErrors({});
+    setShowEditModal(true);
   };
 
   const deleteEmployee = async (id) => {
@@ -200,7 +200,6 @@ const Employee = () => {
         await fetchEmployees();
       } catch (error) {
         console.error(error);
-        console.error("Réponse d'erreur (suppression) :", error.response);
         const message = error.response?.data?.message || "Erreur lors de la suppression";
         toast.error(message);
       }
@@ -219,7 +218,6 @@ const Employee = () => {
     contractType: employee.contractType,
     departmentID: employee.department?.id || null,
   });
-
 
   return (
     <div className="pc-container">
@@ -245,7 +243,10 @@ const Employee = () => {
             <div className="card mb-4">
               <div className="card-header d-flex justify-content-between align-items-center">
                 <h6>Liste des Employés</h6>
-                <button className="btn btn-primary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#addModal">
+                <button
+                  className="btn btn-primary d-flex align-items-center"
+                  onClick={() => setShowAddModal(true)}
+                >
                   <MdPersonAdd className="me-2" /> Ajouter un Employé
                 </button>
               </div>
@@ -278,15 +279,13 @@ const Employee = () => {
                             <td>{emp.phone}</td>
                             <td>{emp.address}</td>
                             <td>{emp.position}</td>
-                            <td>{emp.hireDate}</td>
+                            <td>{emp.hireDate ? new Date(emp.hireDate).toLocaleDateString('fr-FR') : ''}</td>
                             <td>{emp.contractType}</td>
                             <td>{emp.department?.name}</td>
                             <td>
                               <div className="d-flex gap-2">
                                 <button
                                   className="btn btn-sm btn-warning me-2 d-flex align-items-center"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#editModal"
                                   onClick={() => handleEditClick(emp)}
                                 >
                                   <MdEdit className="me-1" /> Modifier
@@ -313,46 +312,94 @@ const Employee = () => {
       </div>
 
       {/* Modal d'ajout */}
-      <div className="modal fade" id="addModal" tabIndex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id="addModalLabel">Ajouter un employé</h5>
-              <button type="button" className="btn-close" id="closeAddModal" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body">
-              {renderEmployeeForm(newEmployee, handleInputChange, departments, false, errors)}
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-              <button type="button" className="btn btn-primary" onClick={addEmployee} disabled={loading}>
-                {loading ? 'Ajout en cours...' : 'Ajouter'}
-              </button>
+      {showAddModal && (
+        <div
+          className="modal fade show"
+          style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}
+          tabIndex="-1"
+          aria-labelledby="addModalLabel"
+          aria-hidden="false"
+        >
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title" id="addModalLabel">Ajouter un employé</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowAddModal(false)}
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div className="modal-body">
+                {renderEmployeeForm(newEmployee, handleInputChange, departments, false, errors)}
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowAddModal(false)}
+                >
+                  Fermer
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={addEmployee}
+                  disabled={loading}
+                >
+                  {loading ? 'Ajout en cours...' : 'Ajouter'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Modal de modification */}
-      <div className="modal fade" id="editModal" tabIndex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id="editModalLabel">Modifier un employé</h5>
-              <button type="button" className="btn-close" id="closeEditModal" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body">
-              {editingEmployee && renderEmployeeForm(editingEmployee, handleInputChange, departments, true, errors)}
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-              <button type="button" className="btn btn-primary" onClick={updateEmployee} disabled={loading}>
-                {loading ? 'Mise à jour...' : 'Mettre à jour'}
-              </button>
+      {showEditModal && (
+        <div
+          className="modal fade show"
+          style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}
+          tabIndex="-1"
+          aria-labelledby="editModalLabel"
+          aria-hidden="false"
+        >
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title" id="editModalLabel">Modifier un employé</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowEditModal(false)}
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div className="modal-body">
+                {editingEmployee && renderEmployeeForm(editingEmployee, handleInputChange, departments, true, errors)}
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowEditModal(false)}
+                >
+                  Fermer
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={updateEmployee}
+                  disabled={loading}
+                >
+                  {loading ? 'Mise à jour...' : 'Mettre à jour'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };

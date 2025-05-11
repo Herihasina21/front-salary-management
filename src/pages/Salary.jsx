@@ -133,11 +133,14 @@ const Salary = () => {
         await fetchSalaries();
         document.getElementById("closeEditModal")?.click();
       } else {
-        toast.error(response.data.message);
+        toast.error(response.data.message || "Erreur lors de la mise à jour");
       }
     } catch (error) {
       console.error('Erreur lors de la mise à jour du salaire:', error);
-      toast.error(error.response?.data?.message || "Une erreur inattendue est survenue");
+      const errorMessage = error.response?.data?.message ||
+        error.message ||
+        "Une erreur inattendue est survenue";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -145,20 +148,24 @@ const Salary = () => {
 
 
   const handleEditClick = (salary) => {
-    setEditingSalary({ ...salary });
+    setEditingSalary({
+      ...salary,
+      employeeId: salary.employee?.id || ''
+    });
     setErrors({});
   };
 
   const deleteSalary = async (id) => {
-    if (window.confirm("Confirmer la suppression ?")) {
+    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce salaire ?")) {
       setLoading(true);
       try {
         const response = await SalaryService.deleteSalary(id);
         toast.success(response.data.message);
         await fetchSalaries();
       } catch (error) {
-        console.error('Erreur lors de la suppression du salaire:', error);
-        toast.error(error.response?.data?.message || "Erreur lors de la suppression du salaire");
+        console.error('Erreur lors de la suppression:', error);
+        const errorMsg = error.response?.data?.message
+        toast.error(errorMsg);
       } finally {
         setLoading(false);
       }
@@ -202,7 +209,7 @@ const Salary = () => {
                     <thead>
                       <tr>
                         <th>ID</th>
-                        <th>Salaire de base</th>
+                        <th>Salaire de base(Ar)</th>
                         <th>Employé</th>
                         <th>Actions</th>
                       </tr>
@@ -306,25 +313,35 @@ const renderSalaryForm = (salary, handleChange, employees, isEditing = false, er
         min="1"
         required
       />
-      <label htmlFor="baseSalary">Salaire de base</label>
+      <label htmlFor="baseSalary">Salaire de base(Ar)</label>
       {errors.baseSalary && (
         <div className="invalid-feedback">{errors.baseSalary}</div>
       )}
     </div>
     <div className="mb-3">
       <label htmlFor="employeeId">Employé</label>
-      <select
-        className={`form-select ${errors.employeeId ? 'is-invalid' : ''}`}
-        name="employeeId"
-        value={salary.employeeId}
-        onChange={(e) => handleChange(e, isEditing)}
-        required
-      >
-        <option value="">-- Sélectionner un employé --</option>
-        {employees.map((emp) => (
-          <option key={emp.id} value={emp.id}>{emp.name} {emp.firstName}</option>
-        ))}
-      </select>
+      {isEditing ? (
+        <input
+          type="text"
+          className="form-control bg-light"
+          value={employees.find(e => e.id === salary.employeeId)?.name + ' ' +
+            employees.find(e => e.id === salary.employeeId)?.firstName || ''}
+          readOnly
+        />
+      ) : (
+        <select
+          className={`form-select ${errors.employeeId ? 'is-invalid' : ''}`}
+          name="employeeId"
+          value={salary.employeeId}
+          onChange={(e) => handleChange(e, isEditing)}
+          required
+        >
+          <option value="">-- Sélectionner un employé --</option>
+          {employees.map((emp) => (
+            <option key={emp.id} value={emp.id}>{emp.name} {emp.firstName}</option>
+          ))}
+        </select>
+      )}
       {errors.employeeId && (
         <div className="invalid-feedback">{errors.employeeId}</div>
       )}
