@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { toast } from 'react-toastify';
-import { PayrollService } from '../services/PayrollService';
-import {MdAdd, MdEdit, MdDelete, MdFileDownload, MdMessage, MdEmail, MdMail} from "react-icons/md";
-import { EmployeeService } from "../services/EmployeeService.jsx";
-import { BonusService } from '../services/BonusService.jsx';
-import { DeductionService } from '../services/DeductionService.jsx';
+import React, {useEffect, useState} from 'react';
+import {toast} from 'react-toastify';
+import {PayrollService} from '../services/PayrollService';
+import {MdAdd, MdDelete, MdEdit, MdEmail, MdFileDownload, MdMail} from "react-icons/md";
+import {EmployeeService} from "../services/EmployeeService.jsx";
+import {BonusService} from '../services/BonusService.jsx';
+import {DeductionService} from '../services/DeductionService.jsx';
+import Select from "react-select";
 
 const INITIAL_PAYROLL = {
   periodStart: '',
@@ -23,6 +24,21 @@ const Payroll = () => {
   const [errors, setErrors] = useState({});
   const [allBonuses, setAllBonuses] = useState([]);
   const [allDeductions, setAllDeductions] = useState([]);
+
+  const employeeOptions = employees.map(emp => ({
+    value: emp.id,
+    label: `${emp.name} ${emp.firstName}`
+  }));
+
+  const bonusOptions = allBonuses.map(bonus => ({
+    value: bonus.id,
+    label: `${bonus.type} : ${bonus.amount} Ar`
+  }));
+
+  const deductionOptions = allDeductions.map(deduction => ({
+    value: deduction.id,
+    label: `${deduction.type} : ${deduction.amount} Ar`
+  }));
 
   const fetchPayrolls = async () => {
     try {
@@ -88,23 +104,38 @@ const Payroll = () => {
   }, []);
 
   const handleInputChange = (e, isEditing = false) => {
-    const { name, value } = e.target;
-    setErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
+    let name, value;
+    if (!e.target) {
+      name = e.name;
+      value = e.value;
 
-    const updatePayrollState = (payroll) => {
-      if (name === 'bonusId' || name === 'deductionId') {
-        const selectedOptions = Array.from(e.target.selectedOptions).map(option => option.value);
-        return { ...payroll, [name]: selectedOptions };
+      // Si c’est un champ multiselect (bonus/deduction)
+      if (Array.isArray(value)) {
+        value = value.map(opt => opt.value);
+      } else {
+        value = value?.value ?? '';
       }
-      return { ...payroll, [name]: value === "" ? null : value };
-    };
+    } else {
+      name = e.target.name;
+      value = e.target.value;
+
+      if (e.target.multiple) {
+        value = Array.from(e.target.selectedOptions).map(opt => opt.value);
+      }
+    }
+
+    // Nettoyage des erreurs
+    setErrors(prev => ({ ...prev, [name]: '' }));
+
+    const update = (payroll) => ({ ...payroll, [name]: value === "" ? null : value });
 
     if (isEditing) {
-      setEditingPayroll(prev => updatePayrollState(prev));
+      setEditingPayroll(prev => update(prev));
     } else {
-      setNewPayroll(prev => updatePayrollState(prev));
+      setNewPayroll(prev => update(prev));
     }
   };
+
 
   const buildPayrollPayload = (payroll) => {
     // Convertir les dates du format input (YYYY-MM-DD) vers le format attendu par l'API
@@ -327,105 +358,134 @@ const Payroll = () => {
     }
   };
 
-  const renderPayrollForm = (payroll, handleChange, employees, isEditing = false, errors, allBonuses, allDeductions) => (
-    <form>
-      <div className="mb-3">
-        <label className="form-label">Début de Période</label>
-        <input
-          type="date"
-          className={`form-control ${errors.periodStart ? 'is-invalid' : ''}`}
-          name="periodStart"
-          value={payroll.periodStart}
-          onChange={(e) => handleChange(e, isEditing)}
-          required
-        />
-        {errors.periodStart && <div className="invalid-feedback">{errors.periodStart}</div>}
-      </div>
-      <div className="mb-3">
-        <label className="form-label">Fin de Période</label>
-        <input
-          type="date"
-          className={`form-control ${errors.periodEnd ? 'is-invalid' : ''}`}
-          name="periodEnd"
-          value={payroll.periodEnd}
-          onChange={(e) => handleChange(e, isEditing)}
-          required
-        />
-        {errors.periodEnd && <div className="invalid-feedback">{errors.periodEnd}</div>}
-      </div>
+  const renderPayrollForm = (payroll, handleChange, employees, isEditing = false, errors, bonusOptions, deductionOptions, employeeOptions) => (
+          <form>
+            <div className="mb-3">
+              <label className="form-label">Début de Période</label>
+              <input
+                      type="date"
+                      className={`form-control ${errors.periodStart ? 'is-invalid' : ''}`}
+                      name="periodStart"
+                      value={payroll.periodStart}
+                      onChange={(e) => handleChange(e, isEditing)}
+                      required
+              />
+              {errors.periodStart && <div className="invalid-feedback">{errors.periodStart}</div>}
+            </div>
+            <div className="mb-3">
+              <label className="form-label">Fin de Période</label>
+              <input
+                      type="date"
+                      className={`form-control ${errors.periodEnd ? 'is-invalid' : ''}`}
+                      name="periodEnd"
+                      value={payroll.periodEnd}
+                      onChange={(e) => handleChange(e, isEditing)}
+                      required
+              />
+              {errors.periodEnd && <div className="invalid-feedback">{errors.periodEnd}</div>}
+            </div>
 
-      <div className="mb-3">
-        <label className="form-label">Employé</label>
-        <select
-          className={`form-select ${errors.employeeId ? 'is-invalid' : ''}`}
-          name="employeeId"
-          value={payroll.employeeId}
-          onChange={(e) => handleChange(e, isEditing)}
-          required
-        >
-          <option value="">-- Sélectionner un employé --</option>
-          {employees.map(emp => (
-            <option key={emp.id} value={emp.id}>{emp.name} {emp.firstName}</option>
-          ))}
-        </select>
-        {errors.employeeId && <div className="invalid-feedback">{errors.employeeId}</div>}
-      </div>
+            <div className="mb-3">
+              <label className="form-label">Employé</label>
+              <Select
+                      name="employeeId"
+                      value={employeeOptions.find(opt => opt.value === payroll.employeeId) || null}
+                      onChange={(selected) =>
+                              handleChange(
+                                      {
+                                        target: {
+                                          name: 'employeeId',
+                                          value: selected ? selected.value : ''
+                                        }
+                                      },
+                                      isEditing
+                              )
+                      }
+                      options={employeeOptions}
+                      isClearable
+                      placeholder="-- Sélectionner un employé --"
+                      className={errors.employeeId ? 'is-invalid' : ''}
+                      classNamePrefix="react-select"
+              />
+              {errors.employeeId && (
+                      <div className="invalid-feedback d-block">{errors.employeeId}</div>
+              )}
+            </div>
 
-      {/* Bonus Select */}
-      <div className="mb-3">
-        <label className="form-label">Bonus</label>
-        <select
-          multiple
-          className={`form-select ${errors.bonusId ? 'is-invalid' : ''}`}
-          name="bonusId"
-          value={payroll.bonusId || []}
-          onChange={(e) => handleChange(e, isEditing)}
-        >
-          {allBonuses.map(bonus => (
-            <option key={bonus.id} value={bonus.id}>{bonus.type} : {bonus.amount} Ar</option>
-          ))}
-        </select>
-        {errors.bonusId && <div className="invalid-feedback">{errors.bonusId}</div>}
-      </div>
+            {/* Bonus Select */}
+            <div className="mb-3">
+              <label className="form-label">Bonus</label>
+              <Select
+                      name="bonusId"
+                      value={bonusOptions.filter(opt => (payroll.bonusId || []).includes(opt.value))}
+                      onChange={(selected) =>
+                              handleChange(
+                                      {
+                                        target: {
+                                          name: 'bonusId',
+                                          value: selected ? selected.map(opt => opt.value) : []
+                                        }
+                                      },
+                                      isEditing
+                              )
+                      }
+                      options={bonusOptions}
+                      isMulti
+                      placeholder="-- Sélectionner les bonus --"
+                      className={errors.bonusId ? 'is-invalid' : ''}
+                      classNamePrefix="react-select"
+              />
+              {errors.bonusId && <div className="invalid-feedback d-block">{errors.bonusId}</div>}
+            </div>
 
-      {/* Deductions Select */}
-      <div className="mb-3">
-        <label className="form-label">Déductions</label>
-        <select
-          multiple
-          className={`form-select ${errors.deductionId ? 'is-invalid' : ''}`}
-          name="deductionId"
-          value={payroll.deductionId || []}
-          onChange={(e) => handleChange(e, isEditing)}
-        >
-          {allDeductions.map(deduction => (
-            <option key={deduction.id} value={deduction.id}>{deduction.type} : {deduction.amount} Ar</option>
-          ))}
-        </select>
-        {errors.deductionId && <div className="invalid-feedback">{errors.deductionId}</div>}
-      </div>
-    </form>
+            {/* Deductions Select */}
+            <div className="mb-3">
+              <label className="form-label">Déductions</label>
+              <Select
+                      name="deductionId"
+                      value={deductionOptions.filter(opt => (payroll.deductionId || []).includes(opt.value))}
+                      onChange={(selected) =>
+                              handleChange(
+                                      {
+                                        target: {
+                                          name: 'deductionId',
+                                          value: selected ? selected.map(opt => opt.value) : []
+                                        }
+                                      },
+                                      isEditing
+                              )
+                      }
+                      options={deductionOptions}
+                      isMulti
+                      placeholder="-- Sélectionner les déductions --"
+                      className={errors.deductionId ? 'is-invalid' : ''}
+                      classNamePrefix="react-select"
+              />
+              {errors.deductionId && <div className="invalid-feedback d-block">{errors.deductionId}</div>}
+            </div>
+
+          </form>
   );
 
   return (
-    <div className="pc-container">
-      <div className="pc-content">
-        {/* [ breadcrumb ] start */}
-        <div className="page-header">
-          <div className="page-block">
-            <div className="row align-items-center">
-              <div className="col-md-12">
-                <div className="page-header-title">
-                  <h5 className="m-b-10">Gérer les Fiches de Paie</h5>
+          <div className="pc-container">
+            <div className="pc-content">
+              {/* [ breadcrumb ] start */}
+              <div className="page-header">
+                <div className="page-block">
+                  <div className="row align-items-center">
+                    <div className="col-md-12">
+                      <div className="page-header-title">
+                        <h5 className="m-b-10">Gérer les Fiches de Paie</h5>
+                      </div>
+                      <ul className="breadcrumb">
+                        <li className="breadcrumb-item">Pages</li>
+                        <li className="breadcrumb-item">Fiches de Paie</li>
+                      </ul>
+                    </div>
+                  </div>
                 </div>
-                <ul className="breadcrumb">
-                  <li className="breadcrumb-item">Pages</li>
-                  <li className="breadcrumb-item">Fiches de Paie</li>
-                </ul>
               </div>
-            </div>
-          </div>
-        </div>
         {/* [ breadcrumb ] end */}
 
         {/* [ Main Content ] start */}
@@ -511,7 +571,7 @@ const Payroll = () => {
               <button type="button" className="btn-close" id="closeAddModal" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body">
-              {renderPayrollForm(newPayroll, handleInputChange, employees, false, errors, allBonuses, allDeductions)}
+              {renderPayrollForm(newPayroll, handleInputChange, employees, false, errors, bonusOptions, deductionOptions, employeeOptions)}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
@@ -532,7 +592,7 @@ const Payroll = () => {
               <button type="button" className="btn-close" id="closeEditModal" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body">
-              {editingPayroll && renderPayrollForm(editingPayroll, handleInputChange, employees, true, errors, allBonuses, allDeductions)}
+              {editingPayroll && renderPayrollForm(editingPayroll, handleInputChange, employees, true, errors, bonusOptions, deductionOptions, employeeOptions)}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
