@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { PayrollService } from '../services/PayrollService';
-import {MdAdd, MdEdit, MdDelete, MdFileDownload, MdMessage, MdEmail} from "react-icons/md";
+import {MdAdd, MdEdit, MdDelete, MdFileDownload, MdMessage, MdEmail, MdMail} from "react-icons/md";
 import { EmployeeService } from "../services/EmployeeService.jsx";
 import { BonusService } from '../services/BonusService.jsx';
 import { DeductionService } from '../services/DeductionService.jsx';
@@ -310,6 +310,22 @@ const Payroll = () => {
     }
   };
 
+  const sendPayrollEmailToAll = async () => {
+    if (window.confirm("Confirmer l'envoi de toutes les fiches de paie par email ?")) {
+      try {
+        setLoading(true);
+        const response = await PayrollService.sendPayrollEmailToAll();
+        const message = response.data.message;
+        toast.success(message);
+      } catch (error) {
+        console.error(error);
+        const message = error.response?.data?.message || "Erreur lors de l'envoi de toutes les fiches de paie par email";
+        toast.error(message);
+      } finally {
+        setLoading(false);
+      }
+    }
+  };
 
   const renderPayrollForm = (payroll, handleChange, employees, isEditing = false, errors, allBonuses, allDeductions) => (
     <form>
@@ -418,8 +434,12 @@ const Payroll = () => {
             <div className="card mb-4">
               <div className="card-header d-flex justify-content-between align-items-center">
                 <h6>Liste des Fiches de Paie</h6>
-                <button className="btn btn-primary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#addModal">
-                  <MdAdd className="me-2" /> Ajouter une Fiche de Paie
+                <button className="btn btn-primary" type="button" onClick={() => sendPayrollEmailToAll()} >
+                  <MdMail className="me-2"/> Envoyer à tous les employés
+                </button>
+                <button className="btn btn-primary d-flex align-items-center" data-bs-toggle="modal"
+                        data-bs-target="#addModal">
+                  <MdAdd className="me-2"/> Ajouter une Fiche de Paie
                 </button>
               </div>
               <div className="card-body">

@@ -27,4 +27,8 @@ export const PayrollService = {
         return axios.get(`${API_URL}/${id}/email`, { email });
     },
 
+    sendPayrollEmailToAll: async () => {
+        return axios.post(`${API_URL}/send-all`);
+    }
+
 };
