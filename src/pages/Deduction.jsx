@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { DeductionService } from '../services/DeductionService';
 import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
+import Select from "react-select";
 
 const DEDUCTION_TYPES = [
   "CNAPS",
@@ -11,6 +12,11 @@ const DEDUCTION_TYPES = [
   "Avance sur salaire",
   "Autre"
 ];
+
+const deductionTypeOptions = DEDUCTION_TYPES.map(type => ({
+  value: type,
+  label: type
+}));
 
 const INITIAL_DEDUCTION = {
   type: '',
@@ -271,42 +277,51 @@ const Deduction = () => {
 
 // Composant réutilisable pour le formulaire de déduction
 const renderDeductionForm = (deduction, handleChange, isEditing = false, errors) => (
-  <form>
-    <div className={`mb-3 ${errors.type ? 'form-group position-relative' : ''}`}>
-      <label className="form-label">Type de Déduction</label>
-      <select
-        className={`form-select ${errors.type ? 'is-invalid' : ''}`}
-        name="type"
-        value={deduction.type}
-        onChange={(e) => handleChange(e, isEditing)}
-        required
-      >
-        <option value="">-- Sélectionner --</option>
-        {DEDUCTION_TYPES.map(type => (
-          <option key={type} value={type}>{type}</option>
-        ))}
-      </select>
-      {errors.type && (
-        <div className="invalid-feedback">{errors.type}</div>
-      )}
-    </div>
-    <div className="form-floating mb-3">
-      <input
-        type="number"
-        className={`form-control ${errors.amount ? 'is-invalid' : ''}`}
-        name="amount"
-        value={deduction.amount}
-        onChange={(e) => handleChange(e, isEditing)}
-        placeholder="Montant (Ar)"
-        min="1"
-        required
-      />
-      <label htmlFor="amount">Montant (Ar)</label>
-      {errors.amount && (
-        <div className="invalid-feedback">{errors.amount}</div>
-      )}
-    </div>
-  </form>
+        <form>
+          <div className="form-floating mb-3">
+            <input
+                    type="number"
+                    className={`form-control ${errors.amount ? 'is-invalid' : ''}`}
+                    name="amount"
+                    value={deduction.amount}
+                    onChange={(e) => handleChange(e, isEditing)}
+                    placeholder="Montant (Ar)"
+                    min="1"
+                    required
+            />
+            <label htmlFor="amount">Montant (Ar)</label>
+            {errors.amount && (
+                    <div className="invalid-feedback">{errors.amount}</div>
+            )}
+          </div>
+          <div className={`mb-3 ${errors.type ? 'form-group position-relative' : ''}`}>
+            <label className="form-label">Type de Déduction</label>
+            <Select
+                    name="type"
+                    value={deductionTypeOptions.find(opt => opt.value === deduction.type) || null}
+                    onChange={(selected) =>
+                            handleChange(
+                                    {
+                                      target: {
+                                        name: 'type',
+                                        value: selected ? selected.value : ''
+                                      }
+                                    },
+                                    isEditing
+                            )
+                    }
+                    options={deductionTypeOptions}
+                    isClearable
+                    placeholder="-- Sélectionner --"
+                    className={errors.type ? 'is-invalid' : ''}
+                    classNamePrefix="react-select"
+            />
+            {errors.type && (
+                    <div className="invalid-feedback d-block">{errors.type}</div>
+            )}
+          </div>
+
+        </form>
 );
 
 export default Deduction;

@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import { EmployeeService } from '../services/EmployeeService';
 import { DepartmentService } from '../services/DepartmentService';
 import { MdPersonAdd, MdEdit, MdDelete } from "react-icons/md";
+import Select from 'react-select';
 
 const POSTE = [
   "Développeur",
@@ -20,7 +21,19 @@ const CONTRAT_TYPES = [
   "Freelance",
   "Alternance",
   "Autre"
-]
+];
+
+// Transform for react-select
+const contractTypeOptions = CONTRAT_TYPES.map(type => ({
+  value: type,
+  label: type
+}));
+
+// Transform for react-select
+const posteTypeOptions = POSTE.map(type => ({
+  value: type,
+  label: type
+}));
 
 const INITIAL_EMPLOYEE = {
   name: '',
@@ -43,6 +56,8 @@ const Employee = () => {
   const [errors, setErrors] = useState({});
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+
+  const departmentOptions = departments.map(dep => ({ value: dep.id, label: dep.name }));
 
   const fetchEmployees = async () => {
     try {
@@ -369,7 +384,7 @@ const Employee = () => {
                 ></button>
               </div>
               <div className="modal-body">
-                {renderEmployeeForm(newEmployee, handleInputChange, departments, false, errors)}
+                {renderEmployeeForm(newEmployee, handleInputChange, departments, departmentOptions, false, errors)}
               </div>
               <div className="modal-footer">
                 <button
@@ -414,7 +429,7 @@ const Employee = () => {
                 ></button>
               </div>
               <div className="modal-body">
-                {editingEmployee && renderEmployeeForm(editingEmployee, handleInputChange, departments, true, errors)}
+                {editingEmployee && renderEmployeeForm(editingEmployee, handleInputChange, departments, departmentOptions, true, errors)}
               </div>
               <div className="modal-footer">
                 <button
@@ -441,7 +456,7 @@ const Employee = () => {
   );
 };
 
-const renderEmployeeForm = (employee, handleChange, departments, isEditing, errors) => (
+const renderEmployeeForm = (employee, handleChange, departments, departmentOptions, isEditing, errors) => (
   <div>
     {/* Onglets */}
     <ul className="nav nav-tabs" id="employeeTabs" role="tablist">
@@ -544,75 +559,84 @@ const renderEmployeeForm = (employee, handleChange, departments, isEditing, erro
 
       {/* Onglet professionnel */}
       <div className="tab-pane fade" id="job" role="tabpanel">
-        <div className={`mb-3 ${errors.position ? 'form-group position-relative' : ''}`}>
+        <div className="mb-3">
           <label className="form-label">Poste</label>
-          <select
-            className={`form-select ${errors.position ? 'is-invalid' : ''}`}
-            name="position"
-            value={employee.position}
-            onChange={(e) => handleChange(e, isEditing)}
-            required
-          >
-            <option value="">-- Sélectionner --</option>
-            {POSTE.map(position => (
-              <option key={position} value={position}>{position}</option>
-            ))}
-          </select>
+          <Select
+                  name="position"
+                  value={posteTypeOptions.find(opt => opt.value === employee.position) || null}
+                  onChange={selected =>
+                          handleChange(
+                                  {target: {name: 'position', value: selected ? selected.value : ''}},
+                                  isEditing
+                          )
+                  }
+                  options={posteTypeOptions}
+                  isClearable
+                  placeholder="-- Sélectionner --"
+                  className={errors.position ? 'is-invalid' : ''}
+                  classNamePrefix="react-select"
+          />
           {errors.position && (
-            <div className="invalid-feedback">{errors.position}</div>
+                  <div className="invalid-feedback d-block">{errors.position}</div>
           )}
         </div>
 
         <div className="mb-3">
           <label className="form-label">Date d'embauche</label>
           <input
-            type="date"
-            className={`form-control ${errors.hireDate ? 'is-invalid' : ''}`}
-            name="hireDate"
-            value={employee.hireDate}
-            onChange={(e) => handleChange(e, isEditing)}
+                  type="date"
+                  className={`form-control ${errors.hireDate ? 'is-invalid' : ''}`}
+                  name="hireDate"
+                  value={employee.hireDate}
+                  onChange={(e) => handleChange(e, isEditing)}
           />
           {errors.hireDate && (
-            <div className="invalid-feedback" style={{ position: 'absolute' }}>{errors.hireDate}</div>
+                  <div className="invalid-feedback" style={{position: 'absolute'}}>{errors.hireDate}</div>
           )}
         </div>
 
-        <div className={`mb-3 ${errors.contractType ? 'form-group position-relative' : ''}`}>
+        <div className="mb-3">
           <label className="form-label">Type de contrat</label>
-          <select
-            className={`form-select ${errors.contractType ? 'is-invalid' : ''}`}
-            name="contractType"
-            value={employee.contractType}
-            onChange={(e) => handleChange(e, isEditing)}
-            required
-          >
-            <option value="">-- Sélectionner --</option>
-            {CONTRAT_TYPES.map(contractType => (
-              <option key={contractType} value={contractType}>{contractType}</option>
-            ))}
-          </select>
+          <Select
+                  name="contractType"
+                  value={contractTypeOptions.find(opt => opt.value === employee.contractType) || null}
+                  onChange={(selected) =>
+                          handleChange({
+                            target: {name: 'contractType', value: selected ? selected.value : ''}
+                          }, isEditing)
+                  }
+                  options={contractTypeOptions}
+                  isClearable
+                  placeholder="-- Sélectionner --"
+                  className={errors.contractType ? 'is-invalid' : ''}
+                  classNamePrefix="react-select"
+          />
           {errors.contractType && (
-            <div className="invalid-feedback">{errors.contractType}</div>
+                  <div className="invalid-feedback d-block">{errors.contractType}</div>
           )}
         </div>
 
         <div className={`mb-3 ${errors.department ? 'form-group position-relative' : ''}`}>
           <label className="form-label">Département</label>
-          <select
-            className={`form-select ${errors.department ? 'is-invalid' : ''}`}
-            name="department"
-            value={employee.department?.id || ""}
-            onChange={(e) => handleChange(e, isEditing)}
-          >
-            <option value="">-- Sélectionner --</option>
-            {departments.map(dep => (
-              <option key={dep.id} value={dep.id}>{dep.name}</option>
-            ))}
-          </select>
+          <Select
+                  name="department"
+                  value={
+                          departmentOptions.find(opt => opt.value === employee.department?.id) || null
+                  }
+                  onChange={(selected) =>
+                          handleChange({target: {name: 'department',value: selected ? selected.value : '' }},isEditing)
+                  }
+                  options={departmentOptions}
+                  isClearable
+                  placeholder="-- Sélectionner --"
+                  className={errors.department ? 'is-invalid' : ''}
+                  classNamePrefix="react-select"
+          />
           {errors.department && (
-            <div className="invalid-feedback">{errors.department}</div>
+                  <div className="invalid-feedback d-block">{errors.department}</div>
           )}
         </div>
+
       </div>
     </div>
   </div>

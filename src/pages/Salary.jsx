@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import { SalaryService } from '../services/SalaryService';
 import { EmployeeService } from '../services/EmployeeService';
 import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
+import Select from "react-select";
 
 const INITIAL_SALARY = {
   baseSalary: '',
@@ -16,6 +17,11 @@ const Salary = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+
+  const employeeOptions = employees.map(emp => ({
+    value: emp.id,
+    label: `${emp.name} ${emp.firstName}`
+  }));
 
   useEffect(() => {
     fetchSalaries();
@@ -263,7 +269,7 @@ const Salary = () => {
               <button type="button" className="btn-close" id="closeAddModal" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body">
-              {renderSalaryForm(newSalary, handleInputChange, employees, false, errors)}
+              {renderSalaryForm(newSalary, handleInputChange, employees, employeeOptions, false, errors)}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
@@ -284,7 +290,7 @@ const Salary = () => {
               <button type="button" className="btn-close" id="closeEditModal" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div className="modal-body">
-              {editingSalary && renderSalaryForm(editingSalary, handleInputChange, employees, true, errors)}
+              {editingSalary && renderSalaryForm(editingSalary, handleInputChange, employees, employeeOptions, true, errors)}
             </div>
             <div className="modal-footer">
               <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
@@ -300,7 +306,7 @@ const Salary = () => {
 };
 
 // Composant réutilisable pour le formulaire de salaire
-const renderSalaryForm = (salary, handleChange, employees, isEditing = false, errors) => (
+const renderSalaryForm = (salary, handleChange, employees, employeeOptions, isEditing = false, errors) => (
   <form>
     <div className="form-floating mb-3">
       <input
@@ -321,31 +327,36 @@ const renderSalaryForm = (salary, handleChange, employees, isEditing = false, er
     <div className="mb-3">
       <label htmlFor="employeeId">Employé</label>
       {isEditing ? (
-        <input
-          type="text"
-          className="form-control bg-light"
-          value={employees.find(e => e.id === salary.employeeId)?.name + ' ' +
-            employees.find(e => e.id === salary.employeeId)?.firstName || ''}
-          readOnly
-        />
+              <input
+                      type="text"
+                      className="form-control bg-light"
+                      value={
+                              employees.find(e => e.id === salary.employeeId)?.name + ' ' +
+                              employees.find(e => e.id === salary.employeeId)?.firstName || ''
+                      }
+                      readOnly
+              />
       ) : (
-        <select
-          className={`form-select ${errors.employeeId ? 'is-invalid' : ''}`}
-          name="employeeId"
-          value={salary.employeeId}
-          onChange={(e) => handleChange(e, isEditing)}
-          required
-        >
-          <option value="">-- Sélectionner un employé --</option>
-          {employees.map((emp) => (
-            <option key={emp.id} value={emp.id}>{emp.name} {emp.firstName}</option>
-          ))}
-        </select>
+              <Select
+                      name="employeeId"
+                      value={employeeOptions.find(opt => opt.value === salary.employeeId) || null}
+                      onChange={(selected) =>
+                              handleChange({
+                                target: {name: 'employeeId', value: selected ? selected.value : ''}
+                              }, isEditing)
+                      }
+                      options={employeeOptions}
+                      isClearable
+                      placeholder="-- Sélectionner un employé --"
+                      className={errors.employeeId ? 'is-invalid' : ''}
+                      classNamePrefix="react-select"
+              />
       )}
       {errors.employeeId && (
-        <div className="invalid-feedback">{errors.employeeId}</div>
+              <div className="invalid-feedback d-block">{errors.employeeId}</div>
       )}
     </div>
+
   </form>
 );
 
