@@ -33,7 +33,14 @@ const Department = () => {
 
   const handleInputChange = (e, isEditing = false) => {
     const { name, value } = e.target;
-    const updatedDepartment = isEditing ? { ...editingDepartment, [name]: value } : { ...newDepartment, [name]: value };
+    let updatedValue = value;
+
+    if (name === 'name') {
+      // Remove any numbers from the input
+      updatedValue = value.replace(/[0-9]/g, '');
+    }
+
+    const updatedDepartment = isEditing ? { ...editingDepartment, [name]: updatedValue } : { ...newDepartment, [name]: updatedValue };
 
     if (isEditing) {
       setEditingDepartment(updatedDepartment);
@@ -49,6 +56,10 @@ const Department = () => {
 
     if (!department.name.trim()) {
       newErrors.name = 'Le nom du départment est obligatoire.';
+      isValid = false;
+    }
+     if (department.name.match(/\d/)) {
+      newErrors.name = 'Le nom du département ne doit pas contenir de chiffres.';
       isValid = false;
     }
     if (!department.code.trim()) {

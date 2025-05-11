@@ -3,6 +3,15 @@ import { toast } from 'react-toastify';
 import { DeductionService } from '../services/DeductionService';
 import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
 
+const DEDUCTION_TYPES = [
+  "CNAPS",
+  "OSTIE",
+  "Absence",
+  "Retard",
+  "Avance sur salaire",
+  "Autre"
+];
+
 const INITIAL_DEDUCTION = {
   type: '',
   amount: '',
@@ -54,7 +63,7 @@ const Deduction = () => {
     let isValid = true;
     const newErrors = {};
 
-    if (!deduction.type?.trim()) {
+    if (!deduction.type) {
       newErrors.type = 'Le type de déduction est obligatoire.';
       isValid = false;
     }
@@ -263,17 +272,20 @@ const Deduction = () => {
 // Composant réutilisable pour le formulaire de déduction
 const renderDeductionForm = (deduction, handleChange, isEditing = false, errors) => (
   <form>
-    <div className="form-floating mb-3">
-      <input
-        type="text"
-        className={`form-control ${errors.type ? 'is-invalid' : ''}`}
+    <div className={`mb-3 ${errors.type ? 'form-group position-relative' : ''}`}>
+      <label className="form-label">Type de Déduction</label>
+      <select
+        className={`form-select ${errors.type ? 'is-invalid' : ''}`}
         name="type"
         value={deduction.type}
         onChange={(e) => handleChange(e, isEditing)}
-        placeholder="Type (Ex: CNAPS, OSTIE, Absence)"
         required
-      />
-      <label htmlFor="type">Type de Déduction</label>
+      >
+        <option value="">-- Sélectionner --</option>
+        {DEDUCTION_TYPES.map(type => (
+          <option key={type} value={type}>{type}</option>
+        ))}
+      </select>
       {errors.type && (
         <div className="invalid-feedback">{errors.type}</div>
       )}

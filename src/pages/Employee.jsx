@@ -4,6 +4,24 @@ import { EmployeeService } from '../services/EmployeeService';
 import { DepartmentService } from '../services/DepartmentService';
 import { MdPersonAdd, MdEdit, MdDelete } from "react-icons/md";
 
+const POSTE = [
+  "Développeur",
+  "Designer",
+  "Chef de projet",
+  "RH",
+  "Comptable",
+  "Autre"
+]
+
+const CONTRAT_TYPES = [
+  "CDI",
+  "CDD",
+  "Stage",
+  "Freelance",
+  "Alternance",
+  "Autre"
+]
+
 const INITIAL_EMPLOYEE = {
   name: '',
   firstName: '',
@@ -55,6 +73,17 @@ const Employee = () => {
 
   const handleInputChange = (e, isEditing = false) => {
     const { name, value } = e.target;
+    let updatedValue = value;
+
+    if (name === 'name' || name === 'firstName') {
+      // Remove any numbers from the input
+      updatedValue = value.replace(/[0-9]/g, '');
+    }
+    if (name === 'phone') {
+      // Remove any letters from the input
+      updatedValue = value.replace(/[^\d]/g, '');
+    }
+
     setErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
 
     const updateEmployeeState = (employee) => {
@@ -65,7 +94,7 @@ const Employee = () => {
           department: selectedDepartmentId ? { id: selectedDepartmentId } : null,
         };
       } else {
-        return { ...employee, [name]: value };
+        return { ...employee, [name]: updatedValue };
       }
     };
 
@@ -84,15 +113,23 @@ const Employee = () => {
       newErrors.name = 'Le nom est obligatoire.';
       isValid = false;
     }
+    if (employee.name.match(/\d/)) {
+      newErrors.name = 'Le nom ne doit pas contenir de chiffres.';
+      isValid = false;
+    }
     if (!employee.firstName.trim()) {
       newErrors.firstName = 'Le prénom est obligatoire.';
+      isValid = false;
+    }
+    if (employee.firstName.match(/\d/)) {
+      newErrors.firstName = 'Le prénom ne doit pas contenir de chiffres.';
       isValid = false;
     }
     if (!employee.email.trim()) {
       newErrors.email = "L'email est obligatoire.";
       isValid = false;
-    } else if (!/\S+@\S+\.\S+/.test(employee.email)) {
-      newErrors.email = "L'email n'est pas valide.";
+    } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|org|net|fr)$/.test(employee.email)) {
+      newErrors.email = "L'email doit être au format valide (exemple@domaine.com, .org, .net, .fr...).";
       isValid = false;
     }
     if (!employee.phone.trim()) {
@@ -106,7 +143,7 @@ const Employee = () => {
       newErrors.address = "L'adresse est obligatoire.";
       isValid = false;
     }
-    if (!employee.position.trim()) {
+    if (!employee.position) {
       newErrors.position = 'Le poste est obligatoire.';
       isValid = false;
     }
@@ -114,7 +151,7 @@ const Employee = () => {
       newErrors.hireDate = "La date d'embauche est obligatoire.";
       isValid = false;
     }
-    if (!employee.contractType.trim()) {
+    if (!employee.contractType) {
       newErrors.contractType = "Le type de contrat est obligatoire.";
       isValid = false;
     }
@@ -510,17 +547,16 @@ const renderEmployeeForm = (employee, handleChange, departments, isEditing, erro
         <div className={`mb-3 ${errors.position ? 'form-group position-relative' : ''}`}>
           <label className="form-label">Poste</label>
           <select
-            name="position"
             className={`form-select ${errors.position ? 'is-invalid' : ''}`}
+            name="position"
             value={employee.position}
             onChange={(e) => handleChange(e, isEditing)}
+            required
           >
             <option value="">-- Sélectionner --</option>
-            <option value="Développeur">Développeur</option>
-            <option value="Designer">Designer</option>
-            <option value="Chef de projet">Chef de projet</option>
-            <option value="RH">RH</option>
-            <option value="Comptable">Comptable</option>
+            {POSTE.map(position => (
+              <option key={position} value={position}>{position}</option>
+            ))}
           </select>
           {errors.position && (
             <div className="invalid-feedback">{errors.position}</div>
@@ -544,17 +580,16 @@ const renderEmployeeForm = (employee, handleChange, departments, isEditing, erro
         <div className={`mb-3 ${errors.contractType ? 'form-group position-relative' : ''}`}>
           <label className="form-label">Type de contrat</label>
           <select
-            name="contractType"
             className={`form-select ${errors.contractType ? 'is-invalid' : ''}`}
+            name="contractType"
             value={employee.contractType}
             onChange={(e) => handleChange(e, isEditing)}
+            required
           >
             <option value="">-- Sélectionner --</option>
-            <option value="CDI">CDI</option>
-            <option value="CDD">CDD</option>
-            <option value="Stage">Stage</option>
-            <option value="Freelance">Freelance</option>
-            <option value="Alternance">Alternance</option>
+            {CONTRAT_TYPES.map(contractType => (
+              <option key={contractType} value={contractType}>{contractType}</option>
+            ))}
           </select>
           {errors.contractType && (
             <div className="invalid-feedback">{errors.contractType}</div>

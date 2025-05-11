@@ -3,6 +3,14 @@ import { toast } from 'react-toastify';
 import { BonusService } from '../services/BonusService';
 import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
 
+const BONUS_TYPES = [
+  "Ancienneté",
+  "Performance",
+  "Prime",
+  "Heures supplémentaires",
+  "Autre"
+];
+
 const INITIAL_BONUS = {
   type: '',
   amount: '' // Changed to string to handle input directly
@@ -47,7 +55,7 @@ export default function Bonus() {
     let isValid = true;
     const newErrors = {};
 
-    if (!bonus.type.trim()) {
+    if (!bonus.type) {
       newErrors.type = 'Le type de bonus est obligatoire.';
       isValid = false;
     }
@@ -261,19 +269,21 @@ export default function Bonus() {
 function renderBonusForm(bonus, onChange, errors) {
   return (
     <form>
-      <div className="form-floating mb-3">
-        <input
-          type="text"
-          className={`form-control ${errors.type ? 'is-invalid' : ''}`}
-          id="floatingBonusType"
-          placeholder="Type de bonus (ex: Ancienneté)"
+      <div className={`mb-3 ${errors.type ? 'form-group position-relative' : ''}`}>
+        <label className="form-label">Type de bonus</label>
+        <select
+          className={`form-select ${errors.type ? 'is-invalid' : ''}`}
           name="type"
           value={bonus.type}
           onChange={onChange}
-        />
-        <label htmlFor="floatingBonusType">Type de bonus (ex: Ancienneté)</label>
+        >
+          <option value="">-- Sélectionner --</option>
+          {BONUS_TYPES.map(type => (
+            <option key={type} value={type}>{type}</option>
+          ))}
+        </select>
         {errors.type && (
-          <div className="invalid-feedback d-block mt-1">{errors.type}</div>
+          <div className="invalid-feedback">{errors.type}</div>
         )}
       </div>
       <div className="form-floating mb-3">
@@ -285,7 +295,7 @@ function renderBonusForm(bonus, onChange, errors) {
           name="amount"
           value={bonus.amount}
           onChange={onChange}
-          min="1" 
+          min="1"
         />
         <label htmlFor="floatingBonusAmount">Montant (Ar)</label>
         {errors.amount && (
