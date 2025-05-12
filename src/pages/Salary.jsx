@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { SalaryService } from '../services/SalaryService';
 import { EmployeeService } from '../services/EmployeeService';
-import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
+import { MdAdd } from "react-icons/md";
 import Select from "react-select";
 
 const INITIAL_SALARY = {
@@ -22,6 +22,7 @@ const Salary = () => {
     value: emp.id,
     label: `${emp.name} ${emp.firstName}`
   }));
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchSalaries();
@@ -57,10 +58,9 @@ const Salary = () => {
     const { name, value } = e.target;
     setErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
 
-    // Prevent negative numbers
     let newValue = value;
     if (name === 'baseSalary' && value < 0) {
-      return; // Stop update, keep previous value
+      return;
     }
 
     const updateSalaryState = (salary) => {
@@ -98,7 +98,6 @@ const Salary = () => {
     setErrors({});
   };
 
-
   const addSalary = async () => {
     if (!validateForm(newSalary)) {
       return;
@@ -122,7 +121,6 @@ const Salary = () => {
       setLoading(false);
     }
   };
-
 
   const updateSalary = async () => {
     if (!editingSalary?.id) return;
@@ -152,7 +150,6 @@ const Salary = () => {
     }
   };
 
-
   const handleEditClick = (salary) => {
     setEditingSalary({
       ...salary,
@@ -178,10 +175,20 @@ const Salary = () => {
     }
   };
 
+  const filteredSalaries = salaries.filter(salary => {
+    const searchLower = searchTerm.toLowerCase();
+    const employee = employees.find(emp => emp.id === salary.employee?.id);
+    const employeeName = employee ? `${employee.name} ${employee.firstName}`.toLowerCase() : '';
+
+    return (
+      employeeName.includes(searchLower) ||
+      salary.baseSalary.toString().includes(searchTerm)
+    );
+  });
+
   return (
     <div className="pc-container">
       <div className="pc-content">
-        {/* [ breadcrumb ] start */}
         <div className="page-header">
           <div className="page-block">
             <div className="row align-items-center">
@@ -197,17 +204,33 @@ const Salary = () => {
             </div>
           </div>
         </div>
-        {/* [ breadcrumb ] end */}
 
-        {/* [ Main Content ] start */}
         <div className="row">
           <div className="col-12">
             <div className="card mb-4">
-              <div className="card-header d-flex justify-content-between align-items-center">
-                <h6>Liste des Salaires</h6>
-                <button className="btn btn-primary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#addModal">
-                  <MdAdd className="me-2" /> Ajouter un Salaire
-                </button>
+              <div className="card-header">
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h6>Liste des Salaires ({filteredSalaries.length}/{salaries.length})</h6>
+                  <button
+                    className="btn btn-primary d-flex align-items-center"
+                    data-bs-toggle="modal"
+                    data-bs-target="#addModal"
+                  >
+                    <MdAdd className="me-2" /> Ajouter un Salaire
+                  </button>
+                </div>
+                <div className="input-group" style={{ width: '300px' }}>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Rechercher par employé ou salaire..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  <button className="btn btn-outline-secondary" type="button">
+                    <i className="ti ti-search"></i>
+                  </button>
+                </div>
               </div>
               <div className="card-body">
                 <div className="dt-responsive table-responsive">
@@ -221,31 +244,42 @@ const Salary = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {salaries.length === 0 ? (
-                        <tr><td colSpan="6">Aucun salaire trouvé</td></tr>
+                      {filteredSalaries.length === 0 ? (
+                        <tr>
+                          <td colSpan="4">
+                            {salaries.length === 0
+                              ? "Aucun salaire trouvé"
+                              : "Aucun salaire ne correspond à votre recherche"}
+                          </td>
+                        </tr>
                       ) : (
-                        salaries.map(salary => (
+                        filteredSalaries.map(salary => (
                           <tr key={salary.id}>
                             <td>{salary.id}</td>
                             <td>{salary.baseSalary}</td>
-                            <td>{employees.find(emp => emp.id === salary.employee?.id)?.name} {employees.find(emp => emp.id === salary.employee?.id)?.firstName}</td>
                             <td>
-                              <div className="d-flex gap-2">
-                                <button
-                                  className="btn btn-sm btn-warning me-2 d-flex align-items-center"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#editModal"
-                                  onClick={() => handleEditClick(salary)}
-                                >
-                                  <MdEdit className="me-1" /> Modifier
-                                </button>
-                                <button
-                                  className="btn btn-sm btn-danger d-flex align-items-center"
+                              {employees.find(emp => emp.id === salary.employee?.id)?.name}
+                              {employees.find(emp => emp.id === salary.employee?.id)?.firstName}
+                            </td>
+                            <td className="text-center">
+                              <ul className="me-auto mb-0" style={{ display: 'flex', flexDirection: 'row', paddingLeft: 0, listStyle: 'none', marginLeft: '-5px' }}>
+                                <li className="align-bottom" style={{ marginRight: '10px' }}>
+                                  <a className="avtar avtar-xs btn-link-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editModal"
+                                    onClick={() => handleEditClick(salary)}
+                                    style={{ cursor: 'pointer' }}>
+                                    <i className="ti ti-edit-circle f-18"></i>
+                                  </a>
+                                </li>
+                                <li className="align-bottom">
+                                  <a className="avtar avtar-xs btn-link-danger" 
                                   onClick={() => deleteSalary(salary.id)}
-                                >
-                                  <MdDelete className="me-1" /> Supprimer
-                                </button>
-                              </div>
+                                  style={{ cursor: 'pointer' }}>
+                                    <i className="ti ti-trash f-18" style={{ color: 'red' }}></i>
+                                  </a>
+                                </li>
+                              </ul>
                             </td>
                           </tr>
                         ))
@@ -257,46 +291,45 @@ const Salary = () => {
             </div>
           </div>
         </div>
-      </div>
-      {/* [ Main Content ] end */}
 
-      {/* Modal d'ajout */}
-      <div className="modal fade" id="addModal" tabIndex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id="addModalLabel">Ajouter un Salaire</h5>
-              <button type="button" className="btn-close" id="closeAddModal" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body">
-              {renderSalaryForm(newSalary, handleInputChange, employees, employeeOptions, false, errors)}
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-              <button type="button" className="btn btn-primary" onClick={addSalary} disabled={loading}>
-                {loading ? 'Ajout en cours...' : 'Ajouter'}
-              </button>
+        {/* Modal d'ajout */}
+        <div className="modal fade" id="addModal" tabIndex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title" id="addModalLabel">Ajouter un Salaire</h5>
+                <button type="button" className="btn-close" id="closeAddModal" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div className="modal-body">
+                {renderSalaryForm(newSalary, handleInputChange, employees, employeeOptions, false, errors)}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" className="btn btn-primary" onClick={addSalary} disabled={loading}>
+                  {loading ? 'Ajout en cours...' : 'Ajouter'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Modal de modification */}
-      <div className="modal fade" id="editModal" tabIndex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id="editModalLabel">Modifier un Salaire</h5>
-              <button type="button" className="btn-close" id="closeEditModal" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body">
-              {editingSalary && renderSalaryForm(editingSalary, handleInputChange, employees, employeeOptions, true, errors)}
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-              <button type="button" className="btn btn-primary" onClick={updateSalary} disabled={loading}>
-                {loading ? 'Mise à jour...' : 'Mettre à jour'}
-              </button>
+        {/* Modal de modification */}
+        <div className="modal fade" id="editModal" tabIndex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title" id="editModalLabel">Modifier un Salaire</h5>
+                <button type="button" className="btn-close" id="closeEditModal" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div className="modal-body">
+                {editingSalary && renderSalaryForm(editingSalary, handleInputChange, employees, employeeOptions, true, errors)}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" className="btn btn-primary" onClick={updateSalary} disabled={loading}>
+                  {loading ? 'Mise à jour...' : 'Mettre à jour'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -305,59 +338,60 @@ const Salary = () => {
   );
 };
 
-// Composant réutilisable pour le formulaire de salaire
-const renderSalaryForm = (salary, handleChange, employees, employeeOptions, isEditing = false, errors) => (
-  <form>
-    <div className="form-floating mb-3">
-      <input
-        type="number"
-        className={`form-control ${errors.baseSalary ? 'is-invalid' : ''}`}
-        name="baseSalary"
-        value={salary.baseSalary}
-        onChange={(e) => handleChange(e, isEditing)}
-        placeholder="Salaire de base"
-        min="1"
-        required
-      />
-      <label htmlFor="baseSalary">Salaire de base(Ar)</label>
-      {errors.baseSalary && (
-        <div className="invalid-feedback">{errors.baseSalary}</div>
-      )}
-    </div>
-    <div className="mb-3">
-      <label htmlFor="employeeId">Employé</label>
-      {isEditing ? (
-              <input
-                      type="text"
-                      className="form-control bg-light"
-                      value={
-                              employees.find(e => e.id === salary.employeeId)?.name + ' ' +
-                              employees.find(e => e.id === salary.employeeId)?.firstName || ''
-                      }
-                      readOnly
-              />
-      ) : (
-              <Select
-                      name="employeeId"
-                      value={employeeOptions.find(opt => opt.value === salary.employeeId) || null}
-                      onChange={(selected) =>
-                              handleChange({
-                                target: {name: 'employeeId', value: selected ? selected.value : ''}
-                              }, isEditing)
-                      }
-                      options={employeeOptions}
-                      isClearable
-                      placeholder="-- Sélectionner un employé --"
-                      className={errors.employeeId ? 'is-invalid' : ''}
-                      classNamePrefix="react-select"
-              />
-      )}
-      {errors.employeeId && (
-              <div className="invalid-feedback d-block">{errors.employeeId}</div>
-      )}
-    </div>
-
-  </form>
-);
+// Composant réutilisable pour le formulaire de salaire - VERSION CORRIGÉE
+const renderSalaryForm = (salary, handleChange, employees, employeeOptions, isEditing = false, errors) => {
+  return (
+    <form>
+      <div className="form-floating mb-3">
+        <input
+          type="number"
+          className={`form-control ${errors.baseSalary ? 'is-invalid' : ''}`}
+          name="baseSalary"
+          value={salary.baseSalary}
+          onChange={(e) => handleChange(e, isEditing)}
+          placeholder="Salaire de base"
+          min="1"
+          required
+        />
+        <label htmlFor="baseSalary">Salaire de base(Ar)</label>
+        {errors.baseSalary && (
+          <div className="invalid-feedback">{errors.baseSalary}</div>
+        )}
+      </div>
+      <div className="mb-3">
+        <label htmlFor="employeeId">Employé</label>
+        {isEditing ? (
+          <input
+            type="text"
+            className="form-control bg-light"
+            value={
+              employees.find(e => e.id === salary.employeeId)?.name + ' ' +
+              employees.find(e => e.id === salary.employeeId)?.firstName || ''
+            }
+            readOnly
+          />
+        ) : (
+          <Select
+            name="employeeId"
+            value={employeeOptions.find(opt => opt.value === salary.employeeId) || null}
+            onChange={(selected) =>
+              handleChange({
+                target: {name: 'employeeId', value: selected ? selected.value : ''}
+              }, isEditing)
+            }
+            options={employeeOptions}
+            isClearable
+            placeholder="-- Sélectionner un employé --"
+            className={errors.employeeId ? 'is-invalid' : ''}
+            classNamePrefix="react-select"
+          />
+        )}
+        {errors.employeeId && (
+          <div className="invalid-feedback d-block">{errors.employeeId}</div>
+        )}
+      </div>
+    </form>
+  );
+};
 
 export default Salary;

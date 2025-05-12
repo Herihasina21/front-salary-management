@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { EmployeeService } from '../services/EmployeeService';
 import { DepartmentService } from '../services/DepartmentService';
-import { MdPersonAdd, MdEdit, MdDelete } from "react-icons/md";
+import { MdPersonAdd } from "react-icons/md";
 import Select from 'react-select';
 
 const POSTE = [
@@ -56,6 +56,7 @@ const Employee = () => {
   const [errors, setErrors] = useState({});
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const departmentOptions = departments.map(dep => ({ value: dep.id, label: dep.name }));
 
@@ -271,6 +272,14 @@ const Employee = () => {
     departmentID: employee.department?.id || null,
   });
 
+  const filteredEmployees = employees.filter(emp => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      emp.name.toLowerCase().includes(searchLower) ||
+      emp.firstName.toLowerCase().includes(searchLower)
+    );
+  });
+
   return (
     <div className="pc-container">
       <div className="pc-content">
@@ -293,14 +302,28 @@ const Employee = () => {
         <div className="row">
           <div className="col-12">
             <div className="card mb-4">
-              <div className="card-header d-flex justify-content-between align-items-center">
-                <h6>Liste des Employés</h6>
-                <button
-                  className="btn btn-primary d-flex align-items-center"
-                  onClick={() => setShowAddModal(true)}
-                >
-                  <MdPersonAdd className="me-2" /> Ajouter un Employé
-                </button>
+              <div className="card-header">
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h6>Liste des Employés ({filteredEmployees.length}/{employees.length})</h6>
+                  <button
+                    className="btn btn-primary d-flex align-items-center"
+                    onClick={() => setShowAddModal(true)}
+                  >
+                    <MdPersonAdd className="me-2" /> Ajouter un Employé
+                  </button>
+                </div>
+                <div className="input-group" style={{ width: '300px' }}>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Rechercher par nom ou prénom..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  <button className="btn btn-outline-secondary" type="button">
+                    <i className="ti ti-search"></i>
+                  </button>
+                </div>
               </div>
               <div className="card-body">
                 <div className="dt-responsive table-responsive">
@@ -320,10 +343,16 @@ const Employee = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {employees.length === 0 ? (
-                        <tr><td colSpan="10">Aucun employé trouvé</td></tr>
+                      {filteredEmployees.length === 0 ? (
+                        <tr>
+                          <td colSpan="10">
+                            {employees.length === 0
+                              ? "Aucun employé trouvé"
+                              : "Aucun employé ne correspond à votre recherche"}
+                          </td>
+                        </tr>
                       ) : (
-                        employees.map(emp => (
+                        filteredEmployees.map(emp => (
                           <tr key={emp.id}>
                             <td>{emp.id}</td>
                             <td>{emp.name} {emp.firstName}</td>
@@ -334,22 +363,23 @@ const Employee = () => {
                             <td>{emp.hireDate ? new Date(emp.hireDate).toLocaleDateString('fr-FR') : ''}</td>
                             <td>{emp.contractType}</td>
                             <td>{emp.department?.name}</td>
-                            <td>
-                              <div className="d-flex gap-2">
-                                <button
-                                  className="btn btn-sm btn-warning me-2 d-flex align-items-center"
-                                  onClick={() => handleEditClick(emp)}
-                                >
-                                  <MdEdit className="me-1" /> Modifier
-                                </button>
-
-                                <button
-                                  className="btn btn-sm btn-danger d-flex align-items-center"
+                            <td className="text-center">
+                              <ul className="me-auto mb-0" style={{ display: 'flex', flexDirection: 'row', paddingLeft: 0, listStyle: 'none', marginLeft: '-5px' }}>
+                                <li className="align-bottom" style={{ marginRight: '10px' }}>
+                                  <a className="avtar avtar-xs btn-link-primary"
+                                   onClick={() => handleEditClick(emp)}
+                                   style={{ cursor: 'pointer' }}>
+                                    <i className="ti ti-edit-circle f-18"></i>
+                                  </a>
+                                </li>
+                                <li className="align-bottom">
+                                  <a className="avtar avtar-xs btn-link-danger" 
                                   onClick={() => deleteEmployee(emp.id)}
-                                >
-                                  <MdDelete className="me-1" /> Supprimer
-                                </button>
-                              </div>
+                                  style={{ cursor: 'pointer' }}>
+                                    <i className="ti ti-trash f-18" style={{ color: 'red' }}></i>
+                                  </a>
+                                </li>
+                              </ul>
                             </td>
                           </tr>
                         ))

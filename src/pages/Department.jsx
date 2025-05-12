@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { DepartmentService } from '../services/DepartmentService';
-import { MdEdit, MdDelete } from "react-icons/md";
-import { FaPlus } from "react-icons/fa";
+import { MdAdd } from "react-icons/md";
 
 const INITIAL_DEPARTMENT = {
   name: '',
@@ -15,6 +14,7 @@ const Department = () => {
   const [editingDepartment, setEditingDepartment] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchDepartments = async () => {
     try {
@@ -58,7 +58,7 @@ const Department = () => {
       newErrors.name = 'Le nom du départment est obligatoire.';
       isValid = false;
     }
-     if (department.name.match(/\d/)) {
+    if (department.name.match(/\d/)) {
       newErrors.name = 'Le nom du département ne doit pas contenir de chiffres.';
       isValid = false;
     }
@@ -145,6 +145,13 @@ const Department = () => {
     setErrors({});
   };
 
+  const filteredDepartments = departments.filter(department => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      department.name.toLowerCase().includes(searchLower)
+    );
+  });
+
   return (
     <div className="pc-container">
       <div className="pc-content">
@@ -170,11 +177,27 @@ const Department = () => {
         <div className="row">
           <div className="col-12">
             <div className="card mb-4">
-              <div className="card-header d-flex justify-content-between align-items-center">
-                <h6>Liste des Départements</h6>
-                <button className="btn btn-primary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#addModal">
-                  <FaPlus className="me-2" /> Ajouter un Département
-                </button>
+              <div className="card-header">
+                <div className="d-flex justify-content-between align-items-center">
+                  <h6>Liste des Départements ({filteredDepartments.length}/{departments.length})</h6>
+                  <button className="btn btn-primary d-flex align-items-center"
+                    data-bs-toggle="modal"
+                    data-bs-target="#addModal">
+                    <MdAdd className="me-2" /> Ajouter un Département
+                  </button>
+                </div>
+                <div className="input-group" style={{ width: '300px' }}>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Rechercher par nom du départment..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  <button className="btn btn-outline-secondary" type="button">
+                    <i className="ti ti-search"></i>
+                  </button>
+                </div>
               </div>
               <div className="card-body">
                 <div className="dt-responsive table-responsive">
@@ -188,31 +211,39 @@ const Department = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {departments.length === 0 ? (
-                        <tr><td colSpan="6">Aucun département trouvé</td></tr>
+                      {filteredDepartments.length === 0 ? (
+                        <tr>
+                          <td colSpan="6">
+                            {departments.length === 0
+                              ? "Aucun département trouvé"
+                              : "Aucun département ne correspond à votre recherche"}
+                          </td>
+                        </tr>
                       ) : (
-                        departments.map(dept => (
+                        filteredDepartments.map(dept => (
                           <tr key={dept.id}>
                             <td>{dept.id}</td>
                             <td>{dept.name}</td>
                             <td>{dept.code}</td>
-                            <td>
-                              <div className="d-flex gap-2">
-                                <button
-                                  className="btn btn-sm btn-warning me-2 d-flex align-items-center"
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#editModal"
-                                  onClick={() => handleEditClick(dept)}
-                                >
-                                  <MdEdit className="me-1" /> Modifier
-                                </button>
-                                <button
-                                  className="btn btn-sm btn-danger d-flex align-items-center"
-                                  onClick={() => deleteDepartment(dept.id)}
-                                >
-                                  <MdDelete className="me-1" /> Supprimer
-                                </button>
-                              </div>
+                            <td className="text-center">
+                              <ul className="me-auto mb-0" style={{ display: 'flex', flexDirection: 'row', paddingLeft: 0, listStyle: 'none', marginLeft: '-5px' }}>
+                                <li className="align-bottom" style={{ marginRight: '10px' }}>
+                                  <a className="avtar avtar-xs btn-link-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editModal"
+                                    onClick={() => handleEditClick(dept)}
+                                    style={{ cursor: 'pointer' }}>
+                                    <i className="ti ti-edit-circle f-18"></i>
+                                  </a>
+                                </li>
+                                <li className="align-bottom">
+                                  <a className="avtar avtar-xs btn-link-danger"
+                                    onClick={() => deleteDepartment(dept.id)}
+                                    style={{ cursor: 'pointer' }}>
+                                    <i className="ti ti-trash f-18" style={{ color: 'red' }}></i>
+                                  </a>
+                                </li>
+                              </ul>
                             </td>
                           </tr>
                         ))

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { BonusService } from '../services/BonusService';
-import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
+import { MdAdd } from "react-icons/md";
 import Select from "react-select";
 
 const BONUS_TYPES = [
@@ -19,7 +19,7 @@ const bonusTypeOptions = BONUS_TYPES.map(type => ({
 
 const INITIAL_BONUS = {
   type: '',
-  amount: '' // Changed to string to handle input directly
+  amount: ''
 };
 
 export default function Bonus() {
@@ -28,6 +28,7 @@ export default function Bonus() {
   const [editingBonus, setEditingBonus] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchBonuses = async () => {
     setLoading(true);
@@ -144,9 +145,17 @@ export default function Bonus() {
   };
 
   const handleEditClick = (bonus) => {
-    setEditingBonus({ ...bonus, amount: String(bonus.amount) }); // Convert amount to string for input
+    setEditingBonus({ ...bonus, amount: String(bonus.amount) });
     setErrors({});
   };
+
+  const filteredBonuses = bonuses.filter(bonus => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      bonus.type.toLowerCase().includes(searchLower) ||
+      bonus.amount.toString().includes(searchTerm)
+    );
+  });
 
   return (
     <div className="pc-container">
@@ -170,11 +179,29 @@ export default function Bonus() {
         <div className="row">
           <div className="col-12">
             <div className="card mb-4">
-              <div className="card-header d-flex justify-content-between align-items-center">
-                <h6>Liste des Bonus</h6>
-                <button className="btn btn-primary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#addBonusModal">
-                  <MdAdd className="me-2" /> Ajouter un Bonus
-                </button>
+              <div className="card-header">
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h6>Liste des Bonus ({filteredBonuses.length}/{bonuses.length})</h6>
+                  <button
+                    className="btn btn-primary d-flex align-items-center"
+                    data-bs-toggle="modal"
+                    data-bs-target="#addBonusModal"
+                  >
+                    <MdAdd className="me-2" /> Ajouter un Bonus
+                  </button>
+                </div>
+                <div className="input-group" style={{ width: '300px' }}>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Rechercher par type ou montant..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  <button className="btn btn-outline-secondary" type="button">
+                    <i className="ti ti-search"></i>
+                  </button>
+                </div>
               </div>
               <div className="card-body">
                 <div className="dt-responsive table-responsive">
@@ -188,31 +215,39 @@ export default function Bonus() {
                       </tr>
                     </thead>
                     <tbody>
-                      {bonuses.length === 0 ? (
-                        <tr><td colSpan="4">Aucun bonus trouvé</td></tr>
+                      {filteredBonuses.length === 0 ? (
+                        <tr>
+                          <td colSpan="4">
+                            {bonuses.length === 0
+                              ? "Aucun bonus trouvé"
+                              : "Aucun bonus ne correspond à votre recherche"}
+                          </td>
+                        </tr>
                       ) : (
-                        bonuses.map(bonus => (
+                        filteredBonuses.map(bonus => (
                           <tr key={bonus.id}>
                             <td>{bonus.id}</td>
                             <td>{bonus.type}</td>
                             <td>{bonus.amount}</td>
-                            <td>
-                              <div className="d-flex gap-2">
-                                <button
-                                  className="btn btn-sm btn-warning me-2 d-flex align-items-center"
-                                  onClick={() => handleEditClick(bonus)}
-                                  data-bs-toggle="modal"
-                                  data-bs-target="#editBonusModal"
-                                >
-                                  <MdEdit className="me-1" /> Modifier
-                                </button>
-                                <button
-                                  className="btn btn-sm btn-danger d-flex align-items-center"
-                                  onClick={() => deleteBonus(bonus.id)}
-                                >
-                                  <MdDelete className="me-1" /> Supprimer
-                                </button>
-                              </div>
+                            <td className="text-center">
+                              <ul className="me-auto mb-0" style={{ display: 'flex', flexDirection: 'row', paddingLeft: 0, listStyle: 'none', marginLeft: '-5px' }}>
+                                <li className="align-bottom" style={{ marginRight: '10px' }}>
+                                  <a className="avtar avtar-xs btn-link-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editBonusModal"
+                                    onClick={() => handleEditClick(bonus)}
+                                    style={{ cursor: 'pointer' }}>
+                                    <i className="ti ti-edit-circle f-18"></i>
+                                  </a>
+                                </li>
+                                <li className="align-bottom">
+                                  <a className="avtar avtar-xs btn-link-danger"
+                                    onClick={() => deleteBonus(bonus.id)}
+                                    style={{ cursor: 'pointer' }}>
+                                    <i className="ti ti-trash f-18" style={{ color: 'red' }}></i>
+                                  </a>
+                                </li>
+                              </ul>
                             </td>
                           </tr>
                         ))
@@ -224,45 +259,45 @@ export default function Bonus() {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Modal d'ajout */}
-      <div className="modal fade" id="addBonusModal" tabIndex="-1" aria-labelledby="addBonusModalLabel" aria-hidden="true">
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id="addBonusModalLabel">Ajouter un Bonus</h5>
-              <button type="button" className="btn-close" id="closeAddBonusModal" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body">
-              {renderBonusForm(newBonus, handleInputChange, errors)}
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-              <button type="button" className="btn btn-primary" onClick={addBonus} disabled={loading}>
-                {loading ? 'Ajout en cours...' : 'Ajouter'}
-              </button>
+        {/* Modal d'ajout */}
+        <div className="modal fade" id="addBonusModal" tabIndex="-1" aria-labelledby="addBonusModalLabel" aria-hidden="true">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title" id="addBonusModalLabel">Ajouter un Bonus</h5>
+                <button type="button" className="btn-close" id="closeAddBonusModal" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div className="modal-body">
+                {renderBonusForm(newBonus, handleInputChange, errors)}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" className="btn btn-primary" onClick={addBonus} disabled={loading}>
+                  {loading ? 'Ajout en cours...' : 'Ajouter'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Modal de modification */}
-      <div className="modal fade" id="editBonusModal" tabIndex="-1" aria-labelledby="editBonusModalLabel" aria-hidden="true">
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id="editBonusModalLabel">Modifier le Bonus</h5>
-              <button type="button" className="btn-close" id="closeEditBonusModal" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body">
-              {editingBonus && renderBonusForm(editingBonus, (e) => handleInputChange(e, true), errors)}
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-              <button type="button" className="btn btn-primary" onClick={updateBonus} disabled={loading}>
-                {loading ? 'Mise à jour...' : 'Enregistrer'}
-              </button>
+        {/* Modal de modification */}
+        <div className="modal fade" id="editBonusModal" tabIndex="-1" aria-labelledby="editBonusModalLabel" aria-hidden="true">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title" id="editBonusModalLabel">Modifier le Bonus</h5>
+                <button type="button" className="btn-close" id="closeEditBonusModal" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div className="modal-body">
+                {editingBonus && renderBonusForm(editingBonus, (e) => handleInputChange(e, true), errors)}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" className="btn btn-primary" onClick={updateBonus} disabled={loading}>
+                  {loading ? 'Mise à jour...' : 'Mettre à jour'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -271,7 +306,6 @@ export default function Bonus() {
   );
 }
 
-// Formulaire Bonus (Réutilisable)
 function renderBonusForm(bonus, onChange, errors) {
   return (
           <form>

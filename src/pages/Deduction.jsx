@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from 'react-toastify';
 import { DeductionService } from '../services/DeductionService';
-import { MdAdd, MdEdit, MdDelete } from "react-icons/md";
+import { MdAdd } from "react-icons/md";
 import Select from "react-select";
 
 const DEDUCTION_TYPES = [
@@ -29,6 +29,7 @@ const Deduction = () => {
   const [editingDeduction, setEditingDeduction] = useState(null);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchDeductions = async () => {
     try {
@@ -52,10 +53,9 @@ const Deduction = () => {
     const { name, value } = e.target;
     setErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
 
-    // Prevent negative numbers
     let newValue = value;
     if (name === 'amount' && value < 0) {
-      return; // Stop update, keep previous value
+      return;
     }
 
     if (isEditing) {
@@ -157,10 +157,17 @@ const Deduction = () => {
     }
   };
 
+  const filteredDeductions = deductions.filter(deduction => {
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      deduction.type.toLowerCase().includes(searchLower) ||
+      deduction.amount.toString().includes(searchTerm)
+    );
+  });
+
   return (
     <div className="pc-container">
       <div className="pc-content">
-        {/* [ breadcrumb ] start */}
         <div className="page-header">
           <div className="page-block">
             <div className="row align-items-center">
@@ -176,17 +183,33 @@ const Deduction = () => {
             </div>
           </div>
         </div>
-        {/* [ breadcrumb ] end */}
 
-        {/* [ Main Content ] start */}
         <div className="row">
           <div className="col-12">
             <div className="card mb-4">
-              <div className="card-header d-flex justify-content-between align-items-center">
-                <h6>Liste des Déductions</h6>
-                <button className="btn btn-primary d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#addModal">
-                  <MdAdd className="me-2" /> Ajouter une Déduction
-                </button>
+              <div className="card-header">
+                <div className="d-flex justify-content-between align-items-center mb-3">
+                  <h6>Liste des Déductions ({filteredDeductions.length}/{deductions.length})</h6>
+                  <button
+                    className="btn btn-primary d-flex align-items-center"
+                    data-bs-toggle="modal"
+                    data-bs-target="#addModal"
+                  >
+                    <MdAdd className="me-2" /> Ajouter une Déduction
+                  </button>
+                </div>
+                <div className="input-group" style={{ width: '300px' }}>
+                  <input
+                    type="text"
+                    className="form-control"
+                    placeholder="Rechercher par type ou montant..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                  <button className="btn btn-outline-secondary" type="button">
+                    <i className="ti ti-search"></i>
+                  </button>
+                </div>
               </div>
               <div className="card-body">
                 <div className="dt-responsive table-responsive">
@@ -200,23 +223,39 @@ const Deduction = () => {
                       </tr>
                     </thead>
                     <tbody>
-                      {deductions.length === 0 ? (
-                        <tr><td colSpan="6">Aucune déduction trouvée</td></tr>
+                      {filteredDeductions.length === 0 ? (
+                        <tr>
+                          <td colSpan="4">
+                            {deductions.length === 0
+                              ? "Aucune déduction trouvée"
+                              : "Aucune déduction ne correspond à votre recherche"}
+                          </td>
+                        </tr>
                       ) : (
-                        deductions.map(deduction => (
+                        filteredDeductions.map(deduction => (
                           <tr key={deduction.id}>
                             <td>{deduction.id}</td>
                             <td>{deduction.type}</td>
                             <td>{deduction.amount}</td>
-                            <td>
-                              <div className="d-flex gap-2">
-                                <button className="btn btn-sm btn-warning me-2 d-flex align-items-center" data-bs-toggle="modal" data-bs-target="#editModal" onClick={() => handleEditClick(deduction)}>
-                                  <MdEdit className="me-1" /> Modifier
-                                </button>
-                                <button className="btn btn-sm btn-danger d-flex align-items-center" onClick={() => deleteDeduction(deduction.id)}>
-                                  <MdDelete className="me-1" /> Supprimer
-                                </button>
-                              </div>
+                            <td className="text-center">
+                              <ul className="me-auto mb-0" style={{ display: 'flex', flexDirection: 'row', paddingLeft: 0, listStyle: 'none', marginLeft: '-5px' }}>
+                                <li className="align-bottom" style={{ marginRight: '10px' }}>
+                                  <a className="avtar avtar-xs btn-link-primary"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#editModal"
+                                    onClick={() => handleEditClick(deduction)}
+                                    style={{ cursor: 'pointer' }}>
+                                    <i className="ti ti-edit-circle f-18"></i>
+                                  </a>
+                                </li>
+                                <li className="align-bottom">
+                                  <a className="avtar avtar-xs btn-link-danger"
+                                    onClick={() => deleteDeduction(deduction.id)}
+                                    style={{ cursor: 'pointer' }}>
+                                    <i className="ti ti-trash f-18" style={{ color: 'red' }}></i>
+                                  </a>
+                                </li>
+                              </ul>
                             </td>
                           </tr>
                         ))
@@ -228,45 +267,45 @@ const Deduction = () => {
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Modal d'ajout */}
-      <div className="modal fade" id="addModal" tabIndex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id="addModalLabel">Ajouter une déduction</h5>
-              <button type="button" className="btn-close" id="closeAddModal" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body">
-              {renderDeductionForm(newDeduction, handleInputChange, false, errors)}
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-              <button type="button" className="btn btn-primary" onClick={addDeduction} disabled={loading}>
-                {loading ? 'Ajout en cours...' : 'Ajouter'}
-              </button>
+        {/* Modal d'ajout */}
+        <div className="modal fade" id="addModal" tabIndex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title" id="addModalLabel">Ajouter une déduction</h5>
+                <button type="button" className="btn-close" id="closeAddModal" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div className="modal-body">
+                {renderDeductionForm(newDeduction, handleInputChange, false, errors)}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" className="btn btn-primary" onClick={addDeduction} disabled={loading}>
+                  {loading ? 'Ajout en cours...' : 'Ajouter'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* Modal de modification */}
-      <div className="modal fade" id="editModal" tabIndex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id="editModalLabel">Modifier une déduction</h5>
-              <button type="button" className="btn-close" id="closeEditModal" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div className="modal-body">
-              {editingDeduction && renderDeductionForm(editingDeduction, handleInputChange, true, errors)}
-            </div>
-            <div className="modal-footer">
-              <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
-              <button type="button" className="btn btn-primary" onClick={updateDeduction} disabled={loading}>
-                {loading ? 'Mise à jour...' : 'Mettre à jour'}
-              </button>
+        {/* Modal de modification */}
+        <div className="modal fade" id="editModal" tabIndex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+          <div className="modal-dialog">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title" id="editModalLabel">Modifier une déduction</h5>
+                <button type="button" className="btn-close" id="closeEditModal" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div>
+              <div className="modal-body">
+                {editingDeduction && renderDeductionForm(editingDeduction, handleInputChange, true, errors)}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <button type="button" className="btn btn-primary" onClick={updateDeduction} disabled={loading}>
+                  {loading ? 'Mise à jour...' : 'Mettre à jour'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -275,7 +314,6 @@ const Deduction = () => {
   );
 };
 
-// Composant réutilisable pour le formulaire de déduction
 const renderDeductionForm = (deduction, handleChange, isEditing = false, errors) => (
         <form>
           <div className="form-floating mb-3">
