@@ -1,16 +1,19 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import 'react-toastify/dist/ReactToastify.css';
-import { ToastContainer } from 'react-toastify'; // Importez ToastContainer
+import { ToastContainer } from 'react-toastify';
+import AuthService from './services/AuthService';
 
-import Bonus from './pages/Bonus';
-import Dashboard from './pages/Dashboard';
-import Deduction from './pages/Deduction';
-import Department from './pages/Department';
-import Employee from './pages/Employee';
-import Payroll from './pages/Payroll';
-import Salary from './pages/Salary';
+import Login from './pages/Login';
+import Register from './pages/Register';
 import Home from './pages/Home';
+import Dashboard from './pages/Dashboard';
+import Employee from './pages/Employee';
+import Department from './pages/Department';
+import Salary from './pages/Salary';
+import Payroll from './pages/Payroll';
+import Bonus from './pages/Bonus';
+import Deduction from './pages/Deduction';
 
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
@@ -19,6 +22,8 @@ import Footer from './components/Footer';
 
 function LayoutWrapper() {
   const location = useLocation();
+  const isAuthPage = ['/login', '/register'].includes(location.pathname);
+  const isAuthenticated = AuthService.isAuthenticated();
 
   useEffect(() => {
     // Préloader
@@ -30,7 +35,6 @@ function LayoutWrapper() {
       }
     }, 1000);
 
-    // Charger les scripts externes (Bootstrap et Feather)
     const loadScripts = async () => {
       await new Promise(resolve => {
         const checkBootstrap = () => {
@@ -46,12 +50,31 @@ function LayoutWrapper() {
     loadScripts();
   }, [location]);
 
+  // Rediriger vers login si non authentifié et pas sur une page d'authentification
+  if (!isAuthenticated && !isAuthPage) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  // Rediriger vers le Home si déjà authentifié et sur login/register
+  if (isAuthenticated && isAuthPage) {
+    return <Navigate to="/" replace />;
+  }
+
   return (
     <div className="content">
       <PreLoader />
-      <Navbar />
-      <Sidebar />
+      
+      {/* Ne pas afficher Navbar et Sidebar sur les pages d'authentification */}
+      {!isAuthPage && (
+        <>
+          <Navbar />
+          <Sidebar />
+        </>
+      )}
+      
       <Routes>
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/employes" element={<Employee />} />
@@ -60,8 +83,12 @@ function LayoutWrapper() {
         <Route path="/payroll" element={<Payroll />} />
         <Route path="/bonus" element={<Bonus />} />
         <Route path="/deduction" element={<Deduction />} />
+        <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/login"} />} />
       </Routes>
-      <Footer />
+      
+      {/* Ne pas afficher Footer sur les pages d'authentification */}
+      {!isAuthPage && <Footer />}
+      
       <ToastContainer />
     </div>
   );
