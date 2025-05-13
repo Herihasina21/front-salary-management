@@ -66,7 +66,7 @@ function Dashboard() {
                                     <h5 className="m-b-10">Statistiques Générales</h5>
                                 </div>
                                 <ul className="breadcrumb">
-                                    <li className="breadcrumb-item">Statistiques</li>
+                                    <li className="breadcrumb-item">Pages</li>
                                     <li className="breadcrumb-item">Tableau de bord</li>
                                 </ul>
                             </div>

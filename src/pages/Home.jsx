@@ -77,7 +77,7 @@ function Home() {
           <AnimatedWelcome variant="h3" align="center">
             {greeting} Bienvenue chez <TypeAnimation
               sequence={[
-                `[Nom de votre Société]`,
+                `Izy M'Lay Entreprise`,
                 1500,
                 `votre plateforme de gestion salariale.`,
                 1500,

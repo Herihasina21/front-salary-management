@@ -21,6 +21,11 @@ function Sidebar() {
               </Link>
             </li>
 
+            <li className="pc-item pc-caption">
+              <label>Pages</label>
+              <i className="ti ti-dashboard"></i>
+            </li>
+
             <li className={`pc-item ${location.pathname === '/dashboard' ? 'active' : ''}`}>
               <Link to="/dashboard" className="pc-link">
                 <MdDashboard className="pc-micon" />
@@ -28,14 +33,9 @@ function Sidebar() {
               </Link>
             </li>
 
-            <li className="pc-item pc-caption">
-              <label>Pages</label>
-              <i className="ti ti-dashboard"></i>
-            </li>
-
             <li className={`pc-item ${location.pathname === '/department' ? 'active' : ''}`}>
               <Link to="/department" className="pc-link">
-                <MdApartment className="pc-micon"/>
+                <MdApartment className="pc-micon" />
                 <span className="pc-mtext">Départements</span>
               </Link>
             </li>

@@ -16,6 +16,6 @@ export const DeductionService = {
     },
 
     deleteDeduction: async (id) => {
-        return ap.delete(`${API_URL}/${id}`);
+        return api.delete(`${API_URL}/${id}`);
     },
 };

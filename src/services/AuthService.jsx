@@ -23,9 +23,16 @@ const AuthService = {
     }
   },
 
-  logout() {
-    localStorage.removeItem('authToken');
-    delete api.defaults.headers.common.Authorization;
+  async logout() {
+    try {
+      await api.post('/logout');
+    } catch (error) {
+      console.error('Logout API error:', error);
+    } finally {
+      localStorage.removeItem('authToken');
+      sessionStorage.removeItem('authToken');
+      delete api.defaults.headers.common.Authorization;
+    }
   },
 
   isAuthenticated() {
@@ -45,7 +52,10 @@ const AuthService = {
     if (!token) return null;
 
     try {
-      return jwtDecode(token);
+      const decoded = jwtDecode(token);
+      return {
+        ...decoded,
+      };
     } catch {
       return null;
     }

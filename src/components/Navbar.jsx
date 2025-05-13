@@ -1,43 +1,202 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import AuthService from '../services/AuthService';
+import { toast } from 'react-toastify';
+
+
 
 function Navbar() {
+    const navigate = useNavigate();
+    const currentUser = AuthService.getCurrentUser();
+    const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+    const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    const handleLogout = async (e) => {
+        e?.preventDefault();
+        setIsLoggingOut(true);
+
+        try {
+            await AuthService.logout();
+            toast.success('Déconnexion réussie');
+            navigate('/login', { replace: true });
+        } catch (error) {
+            toast.error(error.message || 'Erreur lors de la déconnexion');
+        } finally {
+            setIsLoggingOut(false);
+            setShowLogoutConfirm(false);
+        }
+    };
+
+    const confirmLogout = (e) => {
+        e.preventDefault();
+        setShowLogoutConfirm(true);
+    };
+
+    const cancelLogout = () => {
+        setShowLogoutConfirm(false);
+    };
+
     return (
-        <header className="pc-header">
-            <div className="header-wrapper">
-                <div className="me-auto pc-mob-drp">
-                    <ul className="list-unstyled">
-                        <li className="pc-h-item pc-sidebar-collapse">
-                            <a href="#" className="pc-head-link ms-0" id="sidebar-hide">
-                                <i className="ti ti-menu-2"></i>
-                            </a>
-                        </li>
-                        <li className="pc-h-item pc-sidebar-popup">
-                            <a href="#" className="pc-head-link ms-0" id="mobile-collapse">
-                                <i className="ti ti-menu-2"></i>
-                            </a>
-                        </li>
-                    </ul>
+        <>
+            {/* Modal de confirmation */}
+            {showLogoutConfirm && (
+                <div className="modal fade show" id="logoutConfirmModal" tabIndex="-1" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+                    <div className="modal-dialog">
+                        <div className="modal-content">
+                            <div className="modal-header">
+                                <h5 className="modal-title" id="logoutConfirmModalLabel">Confirmer la déconnexion</h5>
+                                <button
+                                    type="button"
+                                    className="btn-close"
+                                    onClick={cancelLogout}
+                                    aria-label="Close"
+                                />
+                            </div>
+                            <div className="modal-body">
+                                <p>Êtes-vous sûr de vouloir vous déconnecter ?</p>
+                            </div>
+                            <div className="modal-footer">
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary"
+                                    onClick={cancelLogout}
+                                    disabled={isLoggingOut}
+                                >
+                                    Annuler
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-danger"
+                                    onClick={handleLogout}
+                                    disabled={isLoggingOut}
+                                >
+                                    {isLoggingOut ? (
+                                        <>
+                                            <span className="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+                                            Déconnexion...
+                                        </>
+                                    ) : 'Se déconnecter'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div className="ms-auto">
-                    <ul className="list-unstyled">
-                        <li className="dropdown pc-h-item">
-                            <a className="pc-head-link dropdown-toggle arrow-none me-0" data-bs-toggle="dropdown" href="#" role="button"
-                                aria-haspopup="false" aria-expanded="false">
-                                <i className="ti ti-mail"></i>
-                            </a>
-                        </li>
-                        <li className="dropdown pc-h-item header-user-profile">
-                            <a className="pc-head-link dropdown-toggle arrow-none me-0" data-bs-toggle="dropdown" href="#" role="button"
-                                aria-haspopup="false" data-bs-auto-close="outside" aria-expanded="false">
-                                <img src="../assets/images/user/avatar-2.jpg" alt="user-image" className="user-avtar" />
-                                <span>Stebin Ben</span>
-                            </a>
-                            {/* Dropdown menu */}
-                        </li>
-                    </ul>
+            )}
+
+            {/* Barre de navigation principale */}
+            <header className="pc-header">
+                <div className="header-wrapper">
+                    <div className="me-auto pc-mob-drp">
+                        <ul className="list-unstyled">
+                            <li className="pc-h-item pc-sidebar-collapse">
+                                <a href="#" className="pc-head-link ms-0" id="sidebar-hide">
+                                    <i className="ti ti-menu-2"></i>
+                                </a>
+                            </li>
+                            <li className="pc-h-item pc-sidebar-popup">
+                                <a href="#" className="pc-head-link ms-0" id="mobile-collapse">
+                                    <i className="ti ti-menu-2"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div className="ms-auto">
+                        <ul className="list-unstyled">
+                            <li className="dropdown pc-h-item header-user-profile">
+                                <a
+                                    className="pc-head-link dropdown-toggle arrow-none me-0"
+                                    data-bs-toggle="dropdown"
+                                    href="#"
+                                    role="button"
+                                    aria-haspopup="false"
+                                    data-bs-auto-close="outside"
+                                    aria-expanded="false"
+                                >
+                                    <img
+                                        src="../assets/images/user/avatar-2.jpg"
+                                        alt={`Profil de ${currentUser?.username || 'utilisateur'}`}
+                                        className="user-avtar"
+                                    />
+                                    <span>{currentUser?.username || 'Utilisateur'}</span>
+                                </a>
+
+                                <div className="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown">
+                                    <div className="dropdown-header">
+                                        <div className="d-flex mb-1">
+                                            <div className="flex-shrink-0">
+                                                <img
+                                                    src="../assets/images/user/avatar-2.jpg"
+                                                    alt={`Profil de ${currentUser?.username || 'utilisateur'}`}
+                                                    className="user-avtar wid-35"
+                                                />
+                                            </div>
+                                            <div className="flex-grow-1 ms-3">
+                                                <h6 className="mb-1">{currentUser?.username || 'Utilisateur'}</h6>
+                                                <span className="text-muted">{currentUser?.email || ''}</span>
+                                            </div>
+                                            <a
+                                                href="#!"
+                                                className="pc-head-link bg-transparent"
+                                                onClick={confirmLogout}
+                                                aria-label="Déconnexion"
+                                            >
+                                                <i className="ti ti-power text-danger"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+
+                                    <ul className="nav drp-tabs nav-fill nav-tabs" id="mydrpTab" role="tablist">
+                                        <li className="nav-item" role="presentation">
+                                            <button
+                                                className="nav-link active"
+                                                id="drp-t1"
+                                                data-bs-toggle="tab"
+                                                data-bs-target="#drp-tab-1"
+                                                type="button"
+                                                role="tab"
+                                                aria-controls="drp-tab-1"
+                                                aria-selected="true"
+                                            >
+                                                <i className="ti ti-user"></i>
+                                                Profil
+                                            </button>
+                                        </li>
+                                    </ul>
+
+                                    <div className="tab-content" id="mysrpTabContent">
+                                        <div
+                                            className="tab-pane fade show active"
+                                            id="drp-tab-1"
+                                            role="tabpanel"
+                                            aria-labelledby="drp-t1"
+                                            tabIndex="0"
+                                        >
+                                            <a href="#!" className="dropdown-item">
+                                                <i className="ti ti-edit-circle"></i>
+                                                <span>Modifier mon profil</span>
+                                            </a>
+                                            <a href="#!" className="dropdown-item">
+                                                <i className="ti ti-user"></i>
+                                                <span>Voir mon profil</span>
+                                            </a>
+                                            <a
+                                                href="#!"
+                                                className="dropdown-item"
+                                                onClick={confirmLogout}
+                                            >
+                                                <i className="ti ti-power"></i>
+                                                <span>Déconnexion</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
                 </div>
-            </div>
-        </header>
+            </header>
+        </>
     );
 }
 
