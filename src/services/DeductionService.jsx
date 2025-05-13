@@ -1,21 +1,21 @@
-import axios from 'axios';
+import api from './Api.jsx';
 
 const API_URL = 'http://localhost:8080/api/deductions';
 
 export const DeductionService = {
     getAllDeduction: async () => {
-        return axios.get(API_URL);
+        return api.get(API_URL);
     },
 
     createDeduction: async (deduction) => {
-        return axios.post(API_URL, deduction);
+        return api.post(API_URL, deduction);
     },
 
     updateDeduction: async (id, deduction) => {
-        return axios.put(`${API_URL}/${id}`, deduction);
+        return api.put(`${API_URL}/${id}`, deduction);
     },
 
     deleteDeduction: async (id) => {
-        return axios.delete(`${API_URL}/${id}`);
+        return ap.delete(`${API_URL}/${id}`);
     },
 };
