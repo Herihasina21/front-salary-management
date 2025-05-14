@@ -63,6 +63,7 @@ const AuthService = {
       console.log("Token décodé:", decoded); // Vérifiez ici
       return {
         ...decoded,
+         email: decoded.sub 
       };
     } catch (error) {
       console.error("Erreur de décodage du token:", error);

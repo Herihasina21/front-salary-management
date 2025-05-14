@@ -4,9 +4,13 @@ import { SalaryService } from '../services/SalaryService';
 import { EmployeeService } from '../services/EmployeeService';
 import { MdAdd } from "react-icons/md";
 import Select from "react-select";
+import { InputNumber } from 'primereact/inputnumber';
+import 'primereact/resources/themes/lara-light-indigo/theme.css';
+import 'primereact/resources/primereact.min.css';
+import 'primeicons/primeicons.css';
 
 const INITIAL_SALARY = {
-  baseSalary: '',
+  baseSalary: 0,
   employeeId: '',
 };
 
@@ -238,7 +242,7 @@ const Salary = () => {
                     <thead>
                       <tr>
                         <th>ID</th>
-                        <th>Salaire de base(Ar)</th>
+                        <th>Salaire de base</th>
                         <th>Employé</th>
                         <th>Actions</th>
                       </tr>
@@ -256,9 +260,14 @@ const Salary = () => {
                         filteredSalaries.map(salary => (
                           <tr key={salary.id}>
                             <td>{salary.id}</td>
-                            <td>{salary.baseSalary}</td>
                             <td>
-                              {employees.find(emp => emp.id === salary.employee?.id)?.name}
+                              {new Intl.NumberFormat('fr-FR', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                              }).format(salary.baseSalary)} Ar
+                            </td>
+                            <td>
+                              {employees.find(emp => emp.id === salary.employee?.id)?.name + ' '}
                               {employees.find(emp => emp.id === salary.employee?.id)?.firstName}
                             </td>
                             <td className="text-center">
@@ -273,9 +282,9 @@ const Salary = () => {
                                   </a>
                                 </li>
                                 <li className="align-bottom">
-                                  <a className="avtar avtar-xs btn-link-danger" 
-                                  onClick={() => deleteSalary(salary.id)}
-                                  style={{ cursor: 'pointer' }}>
+                                  <a className="avtar avtar-xs btn-link-danger"
+                                    onClick={() => deleteSalary(salary.id)}
+                                    style={{ cursor: 'pointer' }}>
                                     <i className="ti ti-trash f-18" style={{ color: 'red' }}></i>
                                   </a>
                                 </li>
@@ -340,22 +349,39 @@ const Salary = () => {
 
 // Composant réutilisable pour le formulaire de salaire - VERSION CORRIGÉE
 const renderSalaryForm = (salary, handleChange, employees, employeeOptions, isEditing = false, errors) => {
+  const handleNumberChange = (e, isEditing) => {
+    const fakeEvent = {
+      target: {
+        name: 'baseSalary',
+        value: e.value
+      }
+    };
+    handleChange(fakeEvent, isEditing);
+  };
+
   return (
     <form>
-      <div className="form-floating mb-3">
-        <input
-          type="number"
-          className={`form-control ${errors.baseSalary ? 'is-invalid' : ''}`}
-          name="baseSalary"
-          value={salary.baseSalary}
-          onChange={(e) => handleChange(e, isEditing)}
-          placeholder="Salaire de base"
-          min="1"
-          required
+      <div className="mb-3">
+        <label htmlFor="baseSalary" className="form-label">Salaire de base</label>
+        <InputNumber
+          inputId="baseSalary"
+          value={salary.baseSalary || 0}
+          onValueChange={(e) => handleNumberChange(e, isEditing)}
+          mode="decimal"
+          locale="fr-FR"
+          className={`w-100 ${errors.baseSalary ? 'p-invalid' : ''}`}
+          min={0}
+          step={10000}
+          suffix=" Ar"
+          minFractionDigits={2}
+          maxFractionDigits={2}
+          showButtons
+          buttonLayout="stacked"
+          incrementButtonClassName="p-button p-button-secondary"
+          decrementButtonClassName="p-button p-button-secondary"
         />
-        <label htmlFor="baseSalary">Salaire de base(Ar)</label>
         {errors.baseSalary && (
-          <div className="invalid-feedback">{errors.baseSalary}</div>
+          <div className="invalid-feedback d-block">{errors.baseSalary}</div>
         )}
       </div>
       <div className="mb-3">
@@ -376,7 +402,7 @@ const renderSalaryForm = (salary, handleChange, employees, employeeOptions, isEd
             value={employeeOptions.find(opt => opt.value === salary.employeeId) || null}
             onChange={(selected) =>
               handleChange({
-                target: {name: 'employeeId', value: selected ? selected.value : ''}
+                target: { name: 'employeeId', value: selected ? selected.value : '' }
               }, isEditing)
             }
             options={employeeOptions}

@@ -542,7 +542,7 @@ const Payroll = () => {
                         <th>Début Période</th>
                         <th>Fin Période</th>
                         <th>Employé</th>
-                        <th>Salaire Net à Payer (Ar)</th>
+                        <th>Salaire Net à Payer</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -564,7 +564,12 @@ const Payroll = () => {
                               <td>{payroll.periodStart}</td>
                               <td>{payroll.periodEnd}</td>
                               <td>{employee ? `${employee.name} ${employee.firstName}` : ''}</td>
-                              <td>{payroll.netSalary}</td>
+                              <td>
+                              {new Intl.NumberFormat('fr-FR', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                              }).format(payroll.netSalary)} Ar
+                            </td>
                               <td className="text-center">
                                 <ul className="me-auto mb-0" style={{ display: 'flex', flexDirection: 'row', paddingLeft: 0, listStyle: 'none', marginLeft: '-5px' }}>
                                   <li className="align-bottom" style={{ marginRight: '10px' }}>

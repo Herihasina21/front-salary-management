@@ -133,16 +133,8 @@ function Navbar() {
                                             </div>
                                             <div className="flex-grow-1 ms-3">
                                                 <h6 className="mb-1">{currentUser?.username || 'Utilisateur'}</h6>
-                                                <span>{currentUser?.username}</span>
+                                                <span>{currentUser?.email}</span>
                                             </div>
-                                            <a
-                                                href="#!"
-                                                className="pc-head-link bg-transparent"
-                                                onClick={confirmLogout}
-                                                aria-label="Déconnexion"
-                                            >
-                                                <i className="ti ti-power text-danger"></i>
-                                            </a>
                                         </div>
                                     </div>
 

@@ -12,7 +12,7 @@ const POSTE = [
   "RH",
   "Comptable",
   "Autre"
-]
+];
 
 const CONTRAT_TYPES = [
   "CDI",
@@ -57,6 +57,7 @@ const Employee = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [activeTab, setActiveTab] = useState('personal');
 
   const departmentOptions = departments.map(dep => ({ value: dep.id, label: dep.name }));
 
@@ -113,6 +114,28 @@ const Employee = () => {
         return { ...employee, [name]: updatedValue };
       }
     };
+
+    if (isEditing) {
+      setEditingEmployee(prev => updateEmployeeState(prev));
+    } else {
+      setNewEmployee(prev => updateEmployeeState(prev));
+    }
+  };
+
+  const handleSelectChange = (selected, name, isEditing = false) => {
+    setErrors(prevErrors => ({ ...prevErrors, [name]: '' }));
+    const updateEmployeeState = (employee) => ({ ...employee, [name]: selected ? selected.value : '' });
+
+    if (isEditing) {
+      setEditingEmployee(prev => updateEmployeeState(prev));
+    } else {
+      setNewEmployee(prev => updateEmployeeState(prev));
+    }
+  };
+
+  const handleDepartmentSelectChange = (selected, isEditing = false) => {
+    setErrors(prevErrors => ({ ...prevErrors, 'department': '' }));
+    const updateEmployeeState = (employee) => ({ ...employee, department: selected ? { id: selected.value } : null });
 
     if (isEditing) {
       setEditingEmployee(prev => updateEmployeeState(prev));
@@ -184,6 +207,7 @@ const Employee = () => {
     setNewEmployee(INITIAL_EMPLOYEE);
     setEditingEmployee(null);
     setErrors({});
+    setActiveTab('personal');
   };
 
   const addEmployee = async () => {
@@ -240,6 +264,7 @@ const Employee = () => {
     setEditingEmployee({ ...employee });
     setErrors({});
     setShowEditModal(true);
+    setActiveTab('personal');
   };
 
   const deleteEmployee = async (id) => {
@@ -279,6 +304,14 @@ const Employee = () => {
       emp.firstName.toLowerCase().includes(searchLower)
     );
   });
+
+  const handleNextTab = () => {
+    setActiveTab('job');
+  };
+
+  const handlePreviousTab = () => {
+    setActiveTab('personal');
+  };
 
   return (
     <div className="pc-container">
@@ -367,15 +400,15 @@ const Employee = () => {
                               <ul className="me-auto mb-0" style={{ display: 'flex', flexDirection: 'row', paddingLeft: 0, listStyle: 'none', marginLeft: '-5px' }}>
                                 <li className="align-bottom" style={{ marginRight: '10px' }}>
                                   <a className="avtar avtar-xs btn-link-primary"
-                                   onClick={() => handleEditClick(emp)}
-                                   style={{ cursor: 'pointer' }}>
+                                    onClick={() => handleEditClick(emp)}
+                                    style={{ cursor: 'pointer' }}>
                                     <i className="ti ti-edit-circle f-18"></i>
                                   </a>
                                 </li>
                                 <li className="align-bottom">
-                                  <a className="avtar avtar-xs btn-link-danger" 
-                                  onClick={() => deleteEmployee(emp.id)}
-                                  style={{ cursor: 'pointer' }}>
+                                  <a className="avtar avtar-xs btn-link-danger"
+                                    onClick={() => deleteEmployee(emp.id)}
+                                    style={{ cursor: 'pointer' }}>
                                     <i className="ti ti-trash f-18" style={{ color: 'red' }}></i>
                                   </a>
                                 </li>
@@ -414,7 +447,7 @@ const Employee = () => {
                 ></button>
               </div>
               <div className="modal-body">
-                {renderEmployeeForm(newEmployee, handleInputChange, departments, departmentOptions, false, errors)}
+                {renderEmployeeForm(newEmployee, handleInputChange, handleSelectChange, handleDepartmentSelectChange, departments, departmentOptions, false, errors, activeTab, setActiveTab)}
               </div>
               <div className="modal-footer">
                 <button
@@ -424,14 +457,33 @@ const Employee = () => {
                 >
                   Fermer
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={addEmployee}
-                  disabled={loading}
-                >
-                  {loading ? 'Ajout en cours...' : 'Ajouter'}
-                </button>
+                {activeTab === 'personal' ? (
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleNextTab}
+                  >
+                    Suivant
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={handlePreviousTab}
+                    >
+                      Précédent
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={addEmployee}
+                      disabled={loading}
+                    >
+                      {loading ? 'Ajout en cours...' : 'Ajouter'}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -459,7 +511,7 @@ const Employee = () => {
                 ></button>
               </div>
               <div className="modal-body">
-                {editingEmployee && renderEmployeeForm(editingEmployee, handleInputChange, departments, departmentOptions, true, errors)}
+                {editingEmployee && renderEmployeeForm(editingEmployee, handleInputChange, handleSelectChange, handleDepartmentSelectChange, departments, departmentOptions, true, errors, activeTab, setActiveTab)}
               </div>
               <div className="modal-footer">
                 <button
@@ -469,14 +521,33 @@ const Employee = () => {
                 >
                   Fermer
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={updateEmployee}
-                  disabled={loading}
-                >
-                  {loading ? 'Mise à jour...' : 'Mettre à jour'}
-                </button>
+                {activeTab === 'personal' ? (
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={handleNextTab}
+                  >
+                    Suivant
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={handlePreviousTab}
+                    >
+                      Précédent
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={updateEmployee}
+                      disabled={loading}
+                    >
+                      {loading ? 'Mise à jour...' : 'Mettre à jour'}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -486,17 +557,33 @@ const Employee = () => {
   );
 };
 
-const renderEmployeeForm = (employee, handleChange, departments, departmentOptions, isEditing, errors) => (
+const renderEmployeeForm = (employee, handleInputChange, handleSelectChange, handleDepartmentSelectChange, departments, departmentOptions, isEditing, errors, activeTab, setActiveTab) => (
   <div>
     {/* Onglets */}
     <ul className="nav nav-tabs" id="employeeTabs" role="tablist">
       <li className="nav-item" role="presentation">
-        <button className="nav-link active" id="personal-tab" data-bs-toggle="tab" data-bs-target="#personal" type="button" role="tab">
+        <button
+          className={`nav-link ${activeTab === 'personal' ? 'active' : ''}`}
+          id="personal-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#personal"
+          type="button"
+          role="tab"
+          onClick={() => setActiveTab('personal')}
+        >
           Informations personnelles
         </button>
       </li>
       <li className="nav-item" role="presentation">
-        <button className="nav-link" id="job-tab" data-bs-toggle="tab" data-bs-target="#job" type="button" role="tab">
+        <button
+          className={`nav-link ${activeTab === 'job' ? 'active' : ''}`}
+          id="job-tab"
+          data-bs-toggle="tab"
+          data-bs-target="#job"
+          type="button"
+          role="tab"
+          onClick={() => setActiveTab('job')}
+        >
           Informations professionnelles
         </button>
       </li>
@@ -505,7 +592,7 @@ const renderEmployeeForm = (employee, handleChange, departments, departmentOptio
     {/* Contenu des onglets */}
     <div className="tab-content mt-3" id="employeeTabsContent">
       {/* Onglet personnel */}
-      <div className="tab-pane fade show active" id="personal" role="tabpanel">
+      <div className={`tab-pane fade ${activeTab === 'personal' ? 'show active' : ''}`} id="personal" role="tabpanel">
         <div className="form-floating mb-3">
           <input
             type="text"
@@ -514,7 +601,7 @@ const renderEmployeeForm = (employee, handleChange, departments, departmentOptio
             className={`form-control ${errors.name ? 'is-invalid' : ''}`}
             placeholder="Nom"
             value={employee.name}
-            onChange={(e) => handleChange(e, isEditing)}
+            onChange={(e) => handleInputChange(e, isEditing)}
           />
           <label htmlFor="floatingName">Nom</label>
         </div>
@@ -530,7 +617,7 @@ const renderEmployeeForm = (employee, handleChange, departments, departmentOptio
             className={`form-control ${errors.firstName ? 'is-invalid' : ''}`}
             placeholder="Prénom"
             value={employee.firstName}
-            onChange={(e) => handleChange(e, isEditing)}
+            onChange={(e) => handleInputChange(e, isEditing)}
           />
           <label htmlFor="floatingFirstName">Prénom</label>
         </div>
@@ -546,7 +633,7 @@ const renderEmployeeForm = (employee, handleChange, departments, departmentOptio
             className={`form-control ${errors.email ? 'is-invalid' : ''}`}
             placeholder="Email"
             value={employee.email}
-            onChange={(e) => handleChange(e, isEditing)}
+            onChange={(e) => handleInputChange(e, isEditing)}
           />
           <label htmlFor="floatingEmail">Email</label>
         </div>
@@ -562,7 +649,7 @@ const renderEmployeeForm = (employee, handleChange, departments, departmentOptio
             className={`form-control ${errors.phone ? 'is-invalid' : ''}`}
             placeholder="Téléphone"
             value={employee.phone}
-            onChange={(e) => handleChange(e, isEditing)}
+            onChange={(e) => handleInputChange(e, isEditing)}
           />
           <label htmlFor="floatingPhone">Téléphone</label>
         </div>
@@ -578,7 +665,7 @@ const renderEmployeeForm = (employee, handleChange, departments, departmentOptio
             className={`form-control ${errors.address ? 'is-invalid' : ''}`}
             placeholder="Adresse"
             value={employee.address}
-            onChange={(e) => handleChange(e, isEditing)}
+            onChange={(e) => handleInputChange(e, isEditing)}
           />
           <label htmlFor="floatingAddress">Adresse</label>
         </div>
@@ -588,85 +675,73 @@ const renderEmployeeForm = (employee, handleChange, departments, departmentOptio
       </div>
 
       {/* Onglet professionnel */}
-      <div className="tab-pane fade" id="job" role="tabpanel">
+      <div className={`tab-pane fade ${activeTab === 'job' ? 'show active' : ''}`} id="job" role="tabpanel">
         <div className="mb-3">
           <label className="form-label">Poste</label>
           <Select
-                  name="position"
-                  value={posteTypeOptions.find(opt => opt.value === employee.position) || null}
-                  onChange={selected =>
-                          handleChange(
-                                  {target: {name: 'position', value: selected ? selected.value : ''}},
-                                  isEditing
-                          )
-                  }
-                  options={posteTypeOptions}
-                  isClearable
-                  placeholder="-- Sélectionner --"
-                  className={errors.position ? 'is-invalid' : ''}
-                  classNamePrefix="react-select"
+            name="position"
+            value={posteTypeOptions.find(opt => opt.value === employee.position) || null}
+            onChange={selected => handleSelectChange(selected, 'position', isEditing)}
+            options={posteTypeOptions}
+            isClearable
+            placeholder="-- Sélectionner --"
+            className={errors.position ? 'is-invalid' : ''}
+            classNamePrefix="react-select"
           />
           {errors.position && (
-                  <div className="invalid-feedback d-block">{errors.position}</div>
+            <div className="invalid-feedback d-block">{errors.position}</div>
           )}
         </div>
 
         <div className="mb-3">
           <label className="form-label">Date d'embauche</label>
           <input
-                  type="date"
-                  className={`form-control ${errors.hireDate ? 'is-invalid' : ''}`}
-                  name="hireDate"
-                  value={employee.hireDate}
-                  onChange={(e) => handleChange(e, isEditing)}
+            type="date"
+            className={`form-control ${errors.hireDate ? 'is-invalid' : ''}`}
+            name="hireDate"
+            value={employee.hireDate}
+            onChange={(e) => handleInputChange(e, isEditing)}
           />
           {errors.hireDate && (
-                  <div className="invalid-feedback" style={{position: 'absolute'}}>{errors.hireDate}</div>
+            <div className="invalid-feedback" style={{ position: 'absolute' }}>{errors.hireDate}</div>
           )}
         </div>
 
         <div className="mb-3">
           <label className="form-label">Type de contrat</label>
           <Select
-                  name="contractType"
-                  value={contractTypeOptions.find(opt => opt.value === employee.contractType) || null}
-                  onChange={(selected) =>
-                          handleChange({
-                            target: {name: 'contractType', value: selected ? selected.value : ''}
-                          }, isEditing)
-                  }
-                  options={contractTypeOptions}
-                  isClearable
-                  placeholder="-- Sélectionner --"
-                  className={errors.contractType ? 'is-invalid' : ''}
-                  classNamePrefix="react-select"
+            name="contractType"
+            value={contractTypeOptions.find(opt => opt.value === employee.contractType) || null}
+            onChange={(selected) => handleSelectChange(selected, 'contractType', isEditing)}
+            options={contractTypeOptions}
+            isClearable
+            placeholder="-- Sélectionner --"
+            className={errors.contractType ? 'is-invalid' : ''}
+            classNamePrefix="react-select"
           />
           {errors.contractType && (
-                  <div className="invalid-feedback d-block">{errors.contractType}</div>
+            <div className="invalid-feedback d-block">{errors.contractType}</div>
           )}
         </div>
 
         <div className={`mb-3 ${errors.department ? 'form-group position-relative' : ''}`}>
           <label className="form-label">Département</label>
           <Select
-                  name="department"
-                  value={
-                          departmentOptions.find(opt => opt.value === employee.department?.id) || null
-                  }
-                  onChange={(selected) =>
-                          handleChange({target: {name: 'department',value: selected ? selected.value : '' }},isEditing)
-                  }
-                  options={departmentOptions}
-                  isClearable
-                  placeholder="-- Sélectionner --"
-                  className={errors.department ? 'is-invalid' : ''}
-                  classNamePrefix="react-select"
+            name="department"
+            value={
+              departmentOptions.find(opt => opt.value === employee.department?.id) || null
+            }
+            onChange={(selected) => handleDepartmentSelectChange(selected, isEditing)}
+            options={departmentOptions}
+            isClearable
+            placeholder="-- Sélectionner --"
+            className={errors.department ? 'is-invalid' : ''}
+            classNamePrefix="react-select"
           />
           {errors.department && (
-                  <div className="invalid-feedback d-block">{errors.department}</div>
+            <div className="invalid-feedback d-block">{errors.department}</div>
           )}
         </div>
-
       </div>
     </div>
   </div>

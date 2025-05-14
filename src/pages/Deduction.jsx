@@ -3,6 +3,10 @@ import { toast } from 'react-toastify';
 import { DeductionService } from '../services/DeductionService';
 import { MdAdd } from "react-icons/md";
 import Select from "react-select";
+import { InputNumber } from 'primereact/inputnumber';
+import 'primereact/resources/themes/lara-light-indigo/theme.css';
+import 'primereact/resources/primereact.min.css';
+import 'primeicons/primeicons.css';
 
 const DEDUCTION_TYPES = [
   "CNAPS",
@@ -20,7 +24,7 @@ const deductionTypeOptions = DEDUCTION_TYPES.map(type => ({
 
 const INITIAL_DEDUCTION = {
   type: '',
-  amount: '',
+  amount: 0
 };
 
 const Deduction = () => {
@@ -73,8 +77,11 @@ const Deduction = () => {
       newErrors.type = 'Le type de déduction est obligatoire.';
       isValid = false;
     }
-    if (!deduction.amount || isNaN(deduction.amount) || parseFloat(deduction.amount) <= 0) {
-      newErrors.amount = 'Le montant doit être un nombre positif.';
+    if (!deduction.amount || isNaN(deduction.amount)) {
+      newErrors.amount = 'Le montant de la déduction est obligatoire.';
+      isValid = false;
+    } else if (parseFloat(deduction.amount) < 0) {
+      newErrors.amount = 'Le montant ne peut pas être négatif.';
       isValid = false;
     }
 
@@ -134,7 +141,10 @@ const Deduction = () => {
   };
 
   const handleEditClick = (deduction) => {
-    setEditingDeduction({ ...deduction });
+    setEditingDeduction({
+      ...deduction,
+      amount: parseFloat(deduction.amount)
+    });
     setErrors({});
   };
 
@@ -218,7 +228,7 @@ const Deduction = () => {
                       <tr>
                         <th>ID</th>
                         <th>Type</th>
-                        <th>Montant (Ar)</th>
+                        <th>Montant</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -236,7 +246,12 @@ const Deduction = () => {
                           <tr key={deduction.id}>
                             <td>{deduction.id}</td>
                             <td>{deduction.type}</td>
-                            <td>{deduction.amount}</td>
+                            <td>
+                              {new Intl.NumberFormat('fr-FR', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                              }).format(deduction.amount)} Ar
+                            </td>
                             <td className="text-center">
                               <ul className="me-auto mb-0" style={{ display: 'flex', flexDirection: 'row', paddingLeft: 0, listStyle: 'none', marginLeft: '-5px' }}>
                                 <li className="align-bottom" style={{ marginRight: '10px' }}>
@@ -314,52 +329,70 @@ const Deduction = () => {
   );
 };
 
-const renderDeductionForm = (deduction, handleChange, isEditing = false, errors) => (
-        <form>
-          <div className="form-floating mb-3">
-            <input
-                    type="number"
-                    className={`form-control ${errors.amount ? 'is-invalid' : ''}`}
-                    name="amount"
-                    value={deduction.amount}
-                    onChange={(e) => handleChange(e, isEditing)}
-                    placeholder="Montant (Ar)"
-                    min="1"
-                    required
-            />
-            <label htmlFor="amount">Montant (Ar)</label>
-            {errors.amount && (
-                    <div className="invalid-feedback">{errors.amount}</div>
-            )}
-          </div>
-          <div className={`mb-3 ${errors.type ? 'form-group position-relative' : ''}`}>
-            <label className="form-label">Type de Déduction</label>
-            <Select
-                    name="type"
-                    value={deductionTypeOptions.find(opt => opt.value === deduction.type) || null}
-                    onChange={(selected) =>
-                            handleChange(
-                                    {
-                                      target: {
-                                        name: 'type',
-                                        value: selected ? selected.value : ''
-                                      }
-                                    },
-                                    isEditing
-                            )
-                    }
-                    options={deductionTypeOptions}
-                    isClearable
-                    placeholder="-- Sélectionner --"
-                    className={errors.type ? 'is-invalid' : ''}
-                    classNamePrefix="react-select"
-            />
-            {errors.type && (
-                    <div className="invalid-feedback d-block">{errors.type}</div>
-            )}
-          </div>
+const renderDeductionForm = (deduction, handleChange, isEditing = false, errors) => {
+  const handleNumberChange = (e, isEditing) => {
+    const fakeEvent = {
+      target: {
+        name: 'amount',
+        value: e.value
+      }
+    };
+    handleChange(fakeEvent, isEditing);
+  };
 
-        </form>
-);
+  return (
+    <form>
+      <div className="mb-3">
+        <label htmlFor="deductionAmount" className="form-label">Montant</label>
+        <InputNumber
+          inputId="deductionAmount"
+          value={deduction.amount || 0}
+          onValueChange={(e) => handleNumberChange(e, isEditing)}
+          mode="decimal"
+          locale="fr-FR"
+          className={`w-100 ${errors.amount ? 'p-invalid' : ''}`}
+          min={0}
+          step={10000}
+          suffix=" Ar"
+          minFractionDigits={2}
+          maxFractionDigits={2}
+          showButtons
+          buttonLayout="stacked"
+          incrementButtonClassName="p-button p-button-secondary"
+          decrementButtonClassName="p-button p-button-secondary"
+        />
+        {errors.amount && (
+          <div className="invalid-feedback d-block">{errors.amount}</div>
+        )}
+      </div>
+      <div className={`mb-3 ${errors.type ? 'form-group position-relative' : ''}`}>
+        <label className="form-label">Type de Déduction</label>
+        <Select
+          name="type"
+          value={deductionTypeOptions.find(opt => opt.value === deduction.type) || null}
+          onChange={(selected) =>
+            handleChange(
+              {
+                target: {
+                  name: 'type',
+                  value: selected ? selected.value : ''
+                }
+              },
+              isEditing
+            )
+          }
+          options={deductionTypeOptions}
+          isClearable
+          placeholder="-- Sélectionner --"
+          className={errors.type ? 'is-invalid' : ''}
+          classNamePrefix="react-select"
+        />
+        {errors.type && (
+          <div className="invalid-feedback d-block">{errors.type}</div>
+        )}
+      </div>
+    </form>
+  );
+};
 
 export default Deduction;

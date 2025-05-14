@@ -3,6 +3,10 @@ import { toast } from 'react-toastify';
 import { BonusService } from '../services/BonusService';
 import { MdAdd } from "react-icons/md";
 import Select from "react-select";
+import { InputNumber } from 'primereact/inputnumber';
+import 'primereact/resources/themes/lara-light-indigo/theme.css';
+import 'primereact/resources/primereact.min.css';
+import 'primeicons/primeicons.css';
 
 const BONUS_TYPES = [
   "Ancienneté",
@@ -19,7 +23,7 @@ const bonusTypeOptions = BONUS_TYPES.map(type => ({
 
 const INITIAL_BONUS = {
   type: '',
-  amount: ''
+  amount: 0  // Changé de '' à 0 pour la compatibilité avec InputNumber
 };
 
 export default function Bonus() {
@@ -66,11 +70,8 @@ export default function Bonus() {
       newErrors.type = 'Le type de bonus est obligatoire.';
       isValid = false;
     }
-    if (!bonus.amount.trim()) {
+    if (!bonus.amount || isNaN(bonus.amount)) {
       newErrors.amount = 'Le montant du bonus est obligatoire.';
-      isValid = false;
-    } else if (!/^\d+$/.test(bonus.amount)) {
-      newErrors.amount = 'Le montant doit contenir uniquement des chiffres.';
       isValid = false;
     } else if (parseFloat(bonus.amount) < 0) {
       newErrors.amount = 'Le montant ne peut pas être négatif.';
@@ -91,7 +92,7 @@ export default function Bonus() {
     if (!validateForm(newBonus)) {
       return;
     }
-
+    console.log(addBonus);
     setLoading(true);
     try {
       const response = await BonusService.createBonus({ ...newBonus, amount: parseFloat(newBonus.amount) });
@@ -145,7 +146,10 @@ export default function Bonus() {
   };
 
   const handleEditClick = (bonus) => {
-    setEditingBonus({ ...bonus, amount: String(bonus.amount) });
+    setEditingBonus({
+      ...bonus,
+      amount: parseFloat(bonus.amount) 
+    });
     setErrors({});
   };
 
@@ -210,7 +214,7 @@ export default function Bonus() {
                       <tr>
                         <th>ID</th>
                         <th>Type</th>
-                        <th>Montant (Ar)</th>
+                        <th>Montant</th>
                         <th>Actions</th>
                       </tr>
                     </thead>
@@ -228,7 +232,12 @@ export default function Bonus() {
                           <tr key={bonus.id}>
                             <td>{bonus.id}</td>
                             <td>{bonus.type}</td>
-                            <td>{bonus.amount}</td>
+                            <td>
+                              {new Intl.NumberFormat('fr-FR', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2
+                              }).format(bonus.amount)} Ar
+                            </td>
                             <td className="text-center">
                               <ul className="me-auto mb-0" style={{ display: 'flex', flexDirection: 'row', paddingLeft: 0, listStyle: 'none', marginLeft: '-5px' }}>
                                 <li className="align-bottom" style={{ marginRight: '10px' }}>
@@ -307,47 +316,64 @@ export default function Bonus() {
 }
 
 function renderBonusForm(bonus, onChange, errors) {
+  const handleNumberChange = (e) => {
+    const fakeEvent = {
+      target: {
+        name: 'amount',
+        value: e.value
+      }
+    };
+    onChange(fakeEvent);
+  };
+
   return (
-          <form>
-            <div className="form-floating mb-3">
-              <input
-                      type="number"
-                      className={`form-control ${errors.amount ? 'is-invalid' : ''}`}
-                      id="floatingBonusAmount"
-                      placeholder="Montant (Ar)"
-                      name="amount"
-                      value={bonus.amount}
-                      onChange={onChange}
-                      min="1"
-              />
-              <label htmlFor="floatingBonusAmount">Montant (Ar)</label>
-              {errors.amount && (
-                      <div className="invalid-feedback d-block mt-1">{errors.amount}</div>
-              )}
-            </div>
-            <div className={`mb-3 ${errors.type ? 'form-group position-relative' : ''}`}>
-              <label className="form-label">Type de bonus</label>
-              <Select
-                      name="type"
-                      value={bonusTypeOptions.find(opt => opt.value === bonus.type) || null}
-                      onChange={(selected) =>
-                              onChange({
-                                target: {
-                                  name: 'type',
-                                  value: selected ? selected.value : ''
-                                }
-                              })
-                      }
-                      options={bonusTypeOptions}
-                      isClearable
-                      placeholder="-- Sélectionner --"
-                      className={errors.type ? 'is-invalid' : ''}
-                      classNamePrefix="react-select"
-              />
-              {errors.type && (
-                      <div className="invalid-feedback d-block">{errors.type}</div>
-              )}
-            </div>
-          </form>
+    <form>
+      <div className="mb-3">
+        <label htmlFor="bonusAmount" className="form-label">Montant</label>
+        <InputNumber
+          inputId="bonusAmount"
+          value={bonus.amount || 0}
+          onValueChange={handleNumberChange}
+          mode="decimal"
+          locale="fr-FR"
+          className={`w-100 ${errors.amount ? 'p-invalid' : ''}`}
+          min={0}
+          step={10000}
+          suffix=" Ar"
+          minFractionDigits={2}
+          maxFractionDigits={2}
+          showButtons
+          buttonLayout="stacked"
+          incrementButtonClassName="p-button p-button-secondary"
+          decrementButtonClassName="p-button p-button-secondary"
+        />
+        {errors.amount && (
+          <div className="invalid-feedback d-block">{errors.amount}</div>
+        )}
+      </div>
+      <div className={`mb-3 ${errors.type ? 'form-group position-relative' : ''}`}>
+        <label className="form-label">Type de bonus</label>
+        <Select
+          name="type"
+          value={bonusTypeOptions.find(opt => opt.value === bonus.type) || null}
+          onChange={(selected) =>
+            onChange({
+              target: {
+                name: 'type',
+                value: selected ? selected.value : ''
+              }
+            })
+          }
+          options={bonusTypeOptions}
+          isClearable
+          placeholder="-- Sélectionner --"
+          className={errors.type ? 'is-invalid' : ''}
+          classNamePrefix="react-select"
+        />
+        {errors.type && (
+          <div className="invalid-feedback d-block">{errors.type}</div>
+        )}
+      </div>
+    </form>
   );
 }
