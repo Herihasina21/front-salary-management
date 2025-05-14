@@ -1,6 +1,8 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import AuthService from '../services/AuthService';
+import { toast } from 'react-toastify';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 function Login() {
     const [credentials, setCredentials] = useState({
@@ -8,21 +10,52 @@ function Login() {
         password: ''
     });
     const [rememberMe, setRememberMe] = useState(true);
-    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [errors, setErrors] = useState({});
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
+        const { name, value } = e.target;
         setCredentials({
             ...credentials,
-            [e.target.name]: e.target.value
+            [name]: value
         });
+        setErrors(prev => ({ ...prev, [name]: '' }));
+    };
+
+    const validateForm = () => {
+        let isValid = true;
+        const newErrors = {};
+
+        if (!credentials.email.trim()) {
+            newErrors.email = "L'email est obligatoire.";
+            isValid = false;
+        } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|org|net|fr)$/.test(credentials.email)) {
+            newErrors.email = "L'email doit être au format valide (exemple@domaine.com, .org, .net, .fr...).";
+            isValid = false;
+        }
+
+        if (!credentials.password.trim()) {
+            newErrors.password = 'Le mot de passe est obligatoire.';
+            isValid = false;
+        } else if (credentials.password.length < 6) {
+            newErrors.password = 'Le mot de passe doit contenir au moins 6 caractères.';
+            isValid = false;
+        }
+
+        setErrors(newErrors);
+        return isValid;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!validateForm()) {
+            return;
+        }
+
         setLoading(true);
-        setError('');
 
         try {
             const { email, password } = credentials;
@@ -34,10 +67,12 @@ function Login() {
                 } else {
                     sessionStorage.setItem('authToken', response.data.token);
                 }
-                navigate('/dashboard');
+                toast.success('Connexion réussie !');
+                navigate('/');
             }
         } catch (err) {
-            setError(err.message || 'Email ou mot de passe incorrect');
+            const message = err.response?.data?.message || 'Email ou mot de passe incorrect';
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -47,42 +82,67 @@ function Login() {
         <div className="auth-main">
             <div className="auth-wrapper v3">
                 <div className="auth-form">
-                    <div className="auth-header">
-                        <a href="#"><img src="../assets/images/logo-dark.svg" alt="logo" /></a>
+                    <div className="auth-header" style={{
+                        textAlign: 'center', padding: '5px 0 10px 0', marginTop: '-10px'
+                    }}>
+                        <a href="#">
+                            <img
+                                src="../assets/images/logo-transparent.png"
+                                alt="logo"
+                                style={{
+                                    width: '80px',
+                                    height: 'auto',
+                                    maxWidth: '100%'
+                                }}
+                            />
+                        </a>
                     </div>
                     <div className="card my-5">
                         <div className="card-body">
                             <div className="d-flex justify-content-between align-items-end mb-4">
                                 <h3 className="mb-0"><b>Connexion</b></h3>
-                                <a href="/register" className="link-primary">Pas de compte ?</a>
+                                <Link to="/register" className="link-primary">Pas encore de compte ?</Link>
                             </div>
 
-                            {error && <div className="alert alert-danger">{error}</div>}
-
                             <form onSubmit={handleSubmit}>
-                                <div className="form-group mb-3">
-                                    <label className="form-label">Adresse Email</label>
+                                <div className="form-floating mb-3">
                                     <input
                                         type="email"
-                                        className="form-control"
+                                        className={`form-control ${errors.email ? 'is-invalid' : ''}`}
                                         name="email"
                                         placeholder="Adresse Email"
                                         value={credentials.email}
                                         onChange={handleChange}
-                                        required
                                     />
+                                    <label className="floatingEmail">Adresse Email</label>
+                                    {errors.email && (
+                                        <div className="invalid-feedback">{errors.email}</div>
+                                    )}
                                 </div>
-                                <div className="form-group mb-3">
-                                    <label className="form-label">Mot de passe</label>
+                                <div className="form-floating mb-3 position-relative">
                                     <input
-                                        type="password"
-                                        className="form-control"
+                                        type={showPassword ? "text" : "password"}
+                                        className={`form-control ${errors.password ? 'is-invalid' : ''}`}
                                         name="password"
                                         placeholder="Mot de passe"
                                         value={credentials.password}
                                         onChange={handleChange}
-                                        required
                                     />
+                                    <label className="floatingPassword">Mot de passe</label>
+                                    <button
+                                        type="button"
+                                        className="btn btn-link position-absolute end-0 top-0 pt-3 pe-3"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        style={{
+                                            zIndex: 5,
+                                            transform: errors.password ? 'translateX(-20px)' : 'none'
+                                        }}
+                                    >
+                                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                    </button>
+                                    {errors.password && (
+                                        <div className="invalid-feedback d-block">{errors.password}</div>
+                                    )}
                                 </div>
                                 <div className="d-flex mt-1 justify-content-between">
                                     <div className="form-check">
@@ -97,7 +157,7 @@ function Login() {
                                             Rester connecté
                                         </label>
                                     </div>
-                                    <h5 className="text-secondary f-w-400">Mot de passe oublié ?</h5>
+                                    <a href="/forgot-password" className="text-secondary f-w-400">Mot de passe oublié ?</a>
                                 </div>
                                 <div className="d-grid mt-4">
                                     <button
@@ -113,7 +173,7 @@ function Login() {
                     </div>
                     <div className="auth-footer row">
                         <div className="col my-1">
-                            <p className="m-0">Copyright ©<a href="#">Izy M'Lay Entreprise</a></p>
+                            <p className="m-0">Copyright © <a href="#">Izy M'Lay Entreprise</a></p>
                         </div>
                     </div>
                 </div>

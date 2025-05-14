@@ -1,47 +1,83 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthService from '../services/AuthService';
+import { toast } from 'react-toastify';
+import { FaEye, FaEyeSlash } from 'react-icons/fa';
 
 function Register() {
     const [userData, setUserData] = useState({
-        username: '', 
+        username: '',
         email: '',
         password: ''
     });
-    const [error, setError] = useState('');
-    const [success, setSuccess] = useState(false);
+    const [errors, setErrors] = useState({});
     const [loading, setLoading] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
 
     const handleChange = (e) => {
+        const { name, value } = e.target;
         setUserData({
             ...userData,
-            [e.target.name]: e.target.value
+            [name]: value
         });
+        setErrors(prev => ({ ...prev, [name]: '' }));
+    };
+
+    const validateForm = () => {
+        let isValid = true;
+        const newErrors = {};
+
+        if (!userData.username.trim()) {
+            newErrors.username = "Le nom d'utilisateur est obligatoire.";
+            isValid = false;
+        } else if (userData.username.length < 6) {
+            newErrors.username = "Le nom d'utilisateur doit contenir au moins 6 caractères.";
+            isValid = false;
+        }
+
+        if (!userData.email.trim()) {
+            newErrors.email = "L'email est obligatoire.";
+            isValid = false;
+        } else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.(com|org|net|fr)$/.test(userData.email)) {
+            newErrors.email = "L'email doit être au format valide (exemple@domaine.com, .org, .net, .fr...).";
+            isValid = false;
+        }
+
+        if (!userData.password.trim()) {
+            newErrors.password = 'Le mot de passe est obligatoire.';
+            isValid = false;
+        } else if (userData.password.length < 6) {
+            newErrors.password = 'Le mot de passe doit contenir au moins 6 caractères.';
+            isValid = false;
+        }
+
+        setErrors(newErrors);
+        return isValid;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+
+        if (!validateForm()) {
+            return;
+        }
+
         setLoading(true);
-        setError('');
-        setSuccess(false);
 
         try {
             const { username, email, password } = userData;
-            const response = await AuthService.register(
-                username,
-                email,
-                password
-            );
+            const response = await AuthService.register(username, email, password);
 
             if (response.success) {
-                setSuccess(true);
+                toast.success('Inscription réussie ! Vous allez être redirigé vers la page de connexion...');
                 setTimeout(() => navigate('/login'), 2000);
             } else {
-                setError(response.message || "Erreur lors de l'inscription");
+                toast.error(response.message || "Erreur lors de l'inscription");
             }
         } catch (err) {
-            setError(err.message || "Erreur lors de l'inscription");
+            const message = err.response?.data?.message || "Erreur lors de l'inscription";
+            toast.error(message);
         } finally {
             setLoading(false);
         }
@@ -51,8 +87,20 @@ function Register() {
         <div className="auth-main">
             <div className="auth-wrapper v3">
                 <div className="auth-form">
-                    <div className="auth-header">
-                        <Link to="/"><img src="../assets/images/logo-dark.svg" alt="logo" /></Link>
+                    <div className="auth-header" style={{
+                        textAlign: 'center', padding: '5px 0 10px 0', marginTop: '-10px'
+                    }}>
+                        <a href="#">
+                            <img
+                                src="../assets/images/logo-transparent.png"
+                                alt="logo"
+                                style={{
+                                    width: '80px',
+                                    height: 'auto',
+                                    maxWidth: '100%'
+                                }}
+                            />
+                        </a>
                     </div>
                     <div className="card my-5">
                         <div className="card-body">
@@ -61,47 +109,61 @@ function Register() {
                                 <Link to="/login" className="link-primary">Déjà un compte ?</Link>
                             </div>
 
-                            {error && <div className="alert alert-danger">{error}</div>}
-                            {success && <div className="alert alert-success">Inscription réussie ! Vous allez être redirigé vers la page de connexion...</div>}
-
                             <form onSubmit={handleSubmit}>
-                                <div className="form-group mb-3">
-                                    <label className="form-label">Nom d'utilisateur*</label>
+                                <div className="form-floating mb-3">
                                     <input
                                         type="text"
-                                        className="form-control"
-                                        name="username" 
+                                        className={`form-control ${errors.username ? 'is-invalid' : ''}`}
+                                        name="username"
                                         placeholder="Nom d'utilisateur"
                                         value={userData.username}
                                         onChange={handleChange}
-                                        required
                                     />
+                                    <label className="floatingUsername">Nom d'utilisateur</label>
+                                    {errors.username && (
+                                        <div className="invalid-feedback">{errors.username}</div>
+                                    )}
                                 </div>
 
-                                <div className="form-group mb-3">
-                                    <label className="form-label">Adresse Email*</label>
+                                <div className="form-floating mb-3">
                                     <input
                                         type="email"
-                                        className="form-control"
+                                        className={`form-control ${errors.email ? 'is-invalid' : ''}`}
                                         name="email"
                                         placeholder="Adresse Email"
                                         value={userData.email}
                                         onChange={handleChange}
-                                        required
                                     />
+                                    <label className="floatingEmail">Adresse Email</label>
+                                    {errors.email && (
+                                        <div className="invalid-feedback">{errors.email}</div>
+                                    )}
                                 </div>
 
-                                <div className="form-group mb-3">
-                                    <label className="form-label">Mot de passe*</label>
+                                <div className="form-floating mb-3 position-relative">
                                     <input
-                                        type="password"
-                                        className="form-control"
+                                        type={showPassword ? "text" : "password"}
+                                        className={`form-control ${errors.password ? 'is-invalid' : ''}`}
                                         name="password"
                                         placeholder="Mot de passe"
                                         value={userData.password}
                                         onChange={handleChange}
-                                        required
                                     />
+                                    <label className="floatingPassword">Mot de passe</label>
+                                    <button
+                                        type="button"
+                                        className="btn btn-link position-absolute end-0 top-0 pt-3 pe-3"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        style={{
+                                            zIndex: 5,
+                                            transform: errors.password ? 'translateX(-20px)' : 'none'
+                                        }}
+                                    >
+                                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                    </button>
+                                    {errors.password && (
+                                        <div className="invalid-feedback d-block">{errors.password}</div>
+                                    )}
                                 </div>
 
                                 <p className="mt-4 text-sm text-muted">
@@ -126,7 +188,7 @@ function Register() {
 
                     <div className="auth-footer row">
                         <div className="col my-1">
-                            <p className="m-0">Copyright ©<a href="#">Izy M'Lay Entreprise</a></p>
+                            <p className="m-0">Copyright © <a href="#">Izy M'Lay Entreprise</a></p>
                         </div>
                     </div>
                 </div>

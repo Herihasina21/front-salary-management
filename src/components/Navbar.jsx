@@ -118,7 +118,7 @@ function Navbar() {
                                         alt={`Profil de ${currentUser?.username || 'utilisateur'}`}
                                         className="user-avtar"
                                     />
-                                    <span>{currentUser?.username || 'Utilisateur'}</span>
+                                   <span>{currentUser?.username}</span>
                                 </a>
 
                                 <div className="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown">
@@ -133,7 +133,7 @@ function Navbar() {
                                             </div>
                                             <div className="flex-grow-1 ms-3">
                                                 <h6 className="mb-1">{currentUser?.username || 'Utilisateur'}</h6>
-                                                <span className="text-muted">{currentUser?.email || ''}</span>
+                                                <span>{currentUser?.username}</span>
                                             </div>
                                             <a
                                                 href="#!"

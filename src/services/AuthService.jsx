@@ -16,6 +16,10 @@ const AuthService = {
       const response = await api.post('/login', { email, password });
       if (response.data.success) {
         this.setAuthToken(response.data.data.token);
+        // Stockez le username si la réponse le contient
+        if (response.data.data.username) {
+          localStorage.setItem('username', response.data.data.username);
+        }
       }
       return response.data;
     } catch (error) {
@@ -49,14 +53,19 @@ const AuthService = {
 
   getCurrentUser() {
     const token = this.getAuthToken();
-    if (!token) return null;
+    if (!token) {
+      console.log("Aucun token trouvé");
+      return null;
+    }
 
     try {
       const decoded = jwtDecode(token);
+      console.log("Token décodé:", decoded); // Vérifiez ici
       return {
         ...decoded,
       };
-    } catch {
+    } catch (error) {
+      console.error("Erreur de décodage du token:", error);
       return null;
     }
   },
