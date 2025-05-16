@@ -4,7 +4,7 @@ import api from './Api.jsx';
 const AuthService = {
   async register(username, email, password) {
     try {
-      const response = await api.post('/register', { username, email, password });
+      const response = await api.post('auth/register', { username, email, password });
       return response.data;
     } catch (error) {
       throw this.handleError(error);
@@ -13,7 +13,7 @@ const AuthService = {
 
   async login(email, password) {
     try {
-      const response = await api.post('/login', { email, password });
+      const response = await api.post('auth/login', { email, password });
       if (response.data.success) {
         this.setAuthToken(response.data.data.token);
         // Stockez le username si la réponse le contient
@@ -29,7 +29,7 @@ const AuthService = {
 
   async logout() {
     try {
-      await api.post('/logout');
+      await api.post('auth/logout');
     } catch (error) {
       console.error('Logout API error:', error);
     } finally {
