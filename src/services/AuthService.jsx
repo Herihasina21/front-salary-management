@@ -39,6 +39,35 @@ const AuthService = {
     }
   },
 
+  async updateProfile(profileData) {
+    try {
+      const response = await api.put('auth/user/profile', profileData);
+      if (response.data.success) {
+        const updatedUser = {
+          ...this.getCurrentUser(),
+          username: profileData.username,
+          email: profileData.email
+        };
+        localStorage.setItem('userData', JSON.stringify(updatedUser));
+      }
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  },
+
+  async changePassword(currentPassword, newPassword) {
+    try {
+      const response = await api.put('auth/user/change-password', {
+        currentPassword,
+        newPassword
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  },
+
   isAuthenticated() {
     const token = this.getAuthToken();
     if (!token) return false;
@@ -60,10 +89,11 @@ const AuthService = {
 
     try {
       const decoded = jwtDecode(token);
-      console.log("Token décodé:", decoded); // Vérifiez ici
       return {
         ...decoded,
-         email: decoded.sub 
+        email: decoded.sub,
+        username: decoded.username,
+        role: decoded.role
       };
     } catch (error) {
       console.error("Erreur de décodage du token:", error);

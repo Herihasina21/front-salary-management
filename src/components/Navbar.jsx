@@ -1,15 +1,34 @@
-import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import AuthService from '../services/AuthService';
 import { toast } from 'react-toastify';
 
-
-
 function Navbar() {
     const navigate = useNavigate();
-    const currentUser = AuthService.getCurrentUser();
+    const [currentUser, setCurrentUser] = useState(AuthService.getCurrentUser());
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+    // Effet pour écouter les changements du profil
+    useEffect(() => {
+        const handleStorageChange = () => {
+            const user = AuthService.getCurrentUser();
+            if (JSON.stringify(user) !== JSON.stringify(currentUser)) {
+                setCurrentUser(user);
+            }
+        };
+
+        // Écouter les changements de localStorage
+        window.addEventListener('storage', handleStorageChange);
+        
+        // Vérifier les changements périodiquement (toutes les secondes)
+        const interval = setInterval(handleStorageChange, 1000);
+
+        return () => {
+            window.removeEventListener('storage', handleStorageChange);
+            clearInterval(interval);
+        };
+    }, [currentUser]);
 
     const handleLogout = async (e) => {
         e?.preventDefault();
@@ -110,29 +129,28 @@ function Navbar() {
                                     href="#"
                                     role="button"
                                     aria-haspopup="false"
-                                    data-bs-auto-close="outside"
+                                    data-bs-auto-close="true"
                                     aria-expanded="false"
                                 >
                                     <img
-                                        src="../assets/images/user/avatar-2.jpg"
-                                        alt={`Profil de ${currentUser?.username || 'utilisateur'}`}
+                                        src={`https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.username)}&background=4e73df&color=fff&size=200`}
+                                        alt="User Avatar"
                                         className="user-avtar"
                                     />
-                                   <span>{currentUser?.username}</span>
+                                    <span>{currentUser?.username}</span>
                                 </a>
-
                                 <div className="dropdown-menu dropdown-user-profile dropdown-menu-end pc-h-dropdown">
                                     <div className="dropdown-header">
                                         <div className="d-flex mb-1">
                                             <div className="flex-shrink-0">
                                                 <img
-                                                    src="../assets/images/user/avatar-2.jpg"
-                                                    alt={`Profil de ${currentUser?.username || 'utilisateur'}`}
+                                                    src={`https://ui-avatars.com/api/?name=${encodeURIComponent(currentUser?.username)}&background=4e73df&color=fff&size=200`}
+                                                    alt="User Avatar"
                                                     className="user-avtar wid-35"
                                                 />
                                             </div>
                                             <div className="flex-grow-1 ms-3">
-                                                <h6 className="mb-1">{currentUser?.username || 'Utilisateur'}</h6>
+                                                <h6 className="mb-1">{currentUser?.username}</h6>
                                                 <span>{currentUser?.email}</span>
                                             </div>
                                         </div>
@@ -164,14 +182,10 @@ function Navbar() {
                                             aria-labelledby="drp-t1"
                                             tabIndex="0"
                                         >
-                                            <a href="#!" className="dropdown-item">
-                                                <i className="ti ti-edit-circle"></i>
-                                                <span>Modifier mon profil</span>
-                                            </a>
-                                            <a href="#!" className="dropdown-item">
+                                            <Link to="/profil" className="dropdown-item">
                                                 <i className="ti ti-user"></i>
                                                 <span>Voir mon profil</span>
-                                            </a>
+                                            </Link>
                                             <a
                                                 href="#!"
                                                 className="dropdown-item"

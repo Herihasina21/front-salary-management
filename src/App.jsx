@@ -14,6 +14,7 @@ import Salary from './pages/Salary';
 import Payroll from './pages/Payroll';
 import Bonus from './pages/Bonus';
 import Deduction from './pages/Deduction';
+import UserProfil from './pages/UserProfil';
 
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
@@ -83,6 +84,7 @@ function LayoutWrapper() {
         <Route path="/payroll" element={<Payroll />} />
         <Route path="/bonus" element={<Bonus />} />
         <Route path="/deduction" element={<Deduction />} />
+        <Route path="/profil" element={<UserProfil/>} /> 
         <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/login"} />} />
       </Routes>
       
