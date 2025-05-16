@@ -1,21 +1,19 @@
 import api from './Api.jsx';
 
-const API_URL = 'http://localhost:8080/api/departments';
-
 export const DepartmentService = {
     getAllDepartments: async () => {
-        return api.get(API_URL);
+        return api.get('/departments');
     },
 
     createDepartment: async (department) => {
-        return api.post(API_URL, department);
+        return api.post('/departments', department);
     },
 
     updateDepartment: async (id, department) => {
-        return api.put(`${API_URL}/${id}`, department);
+        return api.put(`/departments/${id}`, department);
     },
 
     deleteDepartment: async (id) => {
-        return api.delete(`${API_URL}/${id}`);
+        return api.delete(`/departments/${id}`);
     },
 };
