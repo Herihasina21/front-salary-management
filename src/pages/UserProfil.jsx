@@ -332,7 +332,7 @@ export default function UserProfile() {
                                                 transform: passwordErrors.current ? 'translateX(-20px)' : 'none'
                                             }}
                                         >
-                                            {showPasswords.current ? <FaEyeSlash /> : <FaEye />}
+                                            {showPasswords.current ? <FaEye /> : <FaEyeSlash />}
                                         </button>
                                         {passwordErrors.current && (
                                             <div className="invalid-feedback d-block">{passwordErrors.current}</div>
@@ -362,7 +362,7 @@ export default function UserProfile() {
                                                 transform: passwordErrors.new ? 'translateX(-20px)' : 'none'
                                             }}
                                         >
-                                            {showPasswords.new ? <FaEyeSlash /> : <FaEye />}
+                                            {showPasswords.new ? <FaEye /> : <FaEyeSlash />}
                                         </button>
                                         {passwordErrors.new && (
                                             <div className="invalid-feedback d-block">{passwordErrors.new}</div>
@@ -392,7 +392,7 @@ export default function UserProfile() {
                                                 transform: passwordErrors.confirm ? 'translateX(-20px)' : 'none'
                                             }}
                                         >
-                                            {showPasswords.confirm ? <FaEyeSlash /> : <FaEye />}
+                                            {showPasswords.confirm ? <FaEye /> : <FaEyeSlash />}
                                         </button>
                                         {passwordErrors.confirm && (
                                             <div className="invalid-feedback d-block">{passwordErrors.confirm}</div>

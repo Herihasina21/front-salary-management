@@ -1,10 +1,10 @@
-import React, {useEffect, useState} from 'react';
-import {toast} from 'react-toastify';
-import {PayrollService} from '../services/PayrollService';
-import {MdAdd } from "react-icons/md";
-import {EmployeeService} from "../services/EmployeeService.jsx";
-import {BonusService} from '../services/BonusService.jsx';
-import {DeductionService} from '../services/DeductionService.jsx';
+import React, { useEffect, useState } from 'react';
+import { toast } from 'react-toastify';
+import { PayrollService } from '../services/PayrollService';
+import { MdAdd } from "react-icons/md";
+import { EmployeeService } from "../services/EmployeeService.jsx";
+import { BonusService } from '../services/BonusService.jsx';
+import { DeductionService } from '../services/DeductionService.jsx';
 import Select from "react-select";
 
 const INITIAL_PAYROLL = {
@@ -295,19 +295,31 @@ const Payroll = () => {
   };
 
   const sendPayrollEmail = async (id) => {
-    if (window.confirm("Confirmer l'envoi de la fiche de paie par email ?")) {
-      try {
-        setLoading(true);
-        const response = await PayrollService.sendPayrollEmail(id, newPayroll.email);
-        const message = response.data.message;
-        toast.success(message);
-      } catch (error) {
-        console.error(error);
-        const message = error.response?.data?.message || "Erreur lors de l'envoi de la fiche de paie par email";
-        toast.error(message);
-      } finally {
-        setLoading(false);
+    try {
+      setLoading(true);
+      toast.info("Envoi en cours...");
+
+      const payroll = payrolls.find(p => p.id === id);
+      if (!payroll || payroll.netSalary === null || payroll.netSalary === undefined || payroll.netSalary === 0) {
+        toast.error("Impossible d'envoyer : la fiche de paie est vide ou invalide");
+        return;
       }
+
+      const employee = employees.find(emp => emp.id === payroll.employeeId);
+      if (!employee || !employee.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(employee.email)) {
+        toast.error("Impossible d'envoyer : l'email de l'employé est invalide ou manquant");
+        return;
+      }
+
+      const response = await PayrollService.sendPayrollEmail(id);
+      const message = response.data.message;
+      toast.success(message);
+    } catch (error) {
+      console.error(error);
+      const message = error.response?.data?.message || "Erreur lors de l'envoi de la fiche de paie par email";
+      toast.error(message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -341,12 +353,26 @@ const Payroll = () => {
     if (window.confirm("Confirmer l'envoi de toutes les fiches de paie par email ?")) {
       try {
         setLoading(true);
+        toast.info("Envoi des fiches de paie en cours...");
+        const validPayrolls = payrolls.filter(payroll => {
+          const employee = employees.find(emp => emp.id === payroll.employeeId);
+          return payroll.netSalary > 0 &&
+            employee &&
+            employee.email &&
+            /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(employee.email);
+        });
+
+        if (validPayrolls.length === 0) {
+          toast.error("Aucune fiche de paie valide à envoyer");
+          return;
+        }
+
         const response = await PayrollService.sendPayrollEmailToAll();
         const message = response.data.message;
         toast.success(message);
       } catch (error) {
         console.error(error);
-        const message = error.response?.data?.message || "Erreur lors de l'envoi de toutes les fiches de paie par email";
+        const message = error.response?.data?.message || "Erreur lors de l'envoi des fiches de paie";
         toast.error(message);
       } finally {
         setLoading(false);
@@ -367,7 +393,6 @@ const Payroll = () => {
     );
   });
 
- 
   const renderPayrollForm = (payroll, handleChange, employees, isEditing = false, errors, bonusOptions, deductionOptions, employeeOptions) => {
     return (
       <form>
@@ -499,10 +524,22 @@ const Payroll = () => {
 
         <div className="row">
           <div className="col-12">
-            <div className="card mb-4">
-              <div className="card-header">
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h6>Liste des Fiches de Paie ({filteredPayrolls.length}/{payrolls.length})</h6>
+            <div className="card">
+              <div className="card-header d-flex justify-content-between align-items-center">
+                <h6>Liste des Fiches de Paie ({filteredPayrolls.length}/{payrolls.length})</h6>
+                <div className="d-flex">
+                  <div className="input-group me-3" style={{ width: '300px' }}>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Rechercher..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <button className="btn btn-outline-secondary" type="button">
+                      <i className="ti ti-search"></i>
+                    </button>
+                  </div>
                   <div className="d-flex gap-2">
                     <button
                       className="btn btn-primary d-flex align-items-center"
@@ -520,39 +557,33 @@ const Payroll = () => {
                     </button>
                   </div>
                 </div>
-                <div className="input-group" style={{ width: '300px' }}>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Rechercher par employé, période ou montant..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                  <button className="btn btn-outline-secondary" type="button">
-                    <i className="ti ti-search"></i>
-                  </button>
-                </div>
               </div>
               <div className="card-body">
-                <div className="dt-responsive table-responsive">
-                  <table className="table table-striped table-bordered nowrap">
-                    <thead>
+                <div className="table-responsive">
+                  <table className="table table-hover align-middle table-bordered">
+                    <thead className="table-light">
                       <tr>
-                        <th>ID</th>
+                        <th className="border-start">ID</th>
                         <th>Début Période</th>
                         <th>Fin Période</th>
                         <th>Employé</th>
                         <th>Salaire Net à Payer</th>
-                        <th>Actions</th>
+                        <th className="border-end">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredPayrolls.length === 0 ? (
                         <tr>
-                          <td colSpan="6">
-                            {payrolls.length === 0
-                              ? "Aucune fiche de paie trouvée"
-                              : "Aucune fiche ne correspond à votre recherche"}
+                          <td colSpan="6" className="text-center py-4 border-start border-end">
+                            {payrolls.length === 0 ? (
+                              <div>
+                                <p className="text-muted">Aucune fiche de paie enregistrée</p>
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="text-muted">Aucun résultat trouvé</p>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       ) : (
@@ -560,17 +591,23 @@ const Payroll = () => {
                           const employee = employees.find(emp => emp.id === payroll.employeeId);
                           return (
                             <tr key={payroll.id}>
-                              <td>{payroll.id}</td>
+                              <td className="border-start">{payroll.id}</td>
                               <td>{payroll.periodStart}</td>
                               <td>{payroll.periodEnd}</td>
-                              <td>{employee ? `${employee.name} ${employee.firstName}` : ''}</td>
                               <td>
-                              {new Intl.NumberFormat('fr-FR', {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                              }).format(payroll.netSalary)} Ar
-                            </td>
-                              <td className="text-center">
+                                <div className="fw-medium">
+                                  {employee ? `${employee.name} ${employee.firstName}` : ''}
+                                </div>
+                              </td>
+                              <td>
+                                <div className="fw-medium">
+                                  {new Intl.NumberFormat('fr-FR', {
+                                    minimumFractionDigits: 2,
+                                    maximumFractionDigits: 2
+                                  }).format(payroll.netSalary)} Ar
+                                </div>
+                              </td>
+                              <td className="text-center border-end">
                                 <ul className="me-auto mb-0" style={{ display: 'flex', flexDirection: 'row', paddingLeft: 0, listStyle: 'none', marginLeft: '-5px' }}>
                                   <li className="align-bottom" style={{ marginRight: '10px' }}>
                                     <a className="avtar avtar-xs btn-link-secondary"

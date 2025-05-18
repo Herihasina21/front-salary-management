@@ -6,58 +6,127 @@ import { SalaryService } from '../services/SalaryService';
 import { BonusService } from '../services/BonusService';
 import { DeductionService } from '../services/DeductionService';
 import { PayrollService } from '../services/PayrollService';
+import { Box, Typography, styled, Card, CardContent, Container, useTheme } from '@mui/material';
+
+const StyledCard = styled(Card)(({ theme }) => ({
+    borderRadius: '12px',
+    boxShadow: theme.shadows[3],
+    transition: 'all 0.3s ease',
+    borderLeft: `4px solid ${theme.palette.primary.main}`,
+    backgroundColor: theme.palette.background.paper,
+    height: '100%',
+    '&:hover': {
+        transform: 'translateY(-5px)',
+        boxShadow: theme.shadows[6],
+    },
+}));
+
+const CardIcon = styled(Box)(({ theme, color }) => ({
+    backgroundColor: theme.palette.mode === 'dark' ? `${color}30` : `${color}20`,
+    color: color,
+    borderRadius: '50%',
+    width: 48,
+    height: 48,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '24px',
+}));
+
+const StatsGrid = styled('div')(({ theme }) => ({
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+    gap: '24px',
+    [theme.breakpoints.down('sm')]: {
+        gridTemplateColumns: '1fr',
+    },
+}));
+
+const statsConfig = [
+    {
+        label: "Départements",
+        icon: <MdApartment size={24} />,
+        stateKey: "totalDepartments",
+        color: "grey.700"
+    },
+    {
+        label: "Employés",
+        icon: <MdPeople size={24} />,
+        stateKey: "totalEmployes",
+        color: "primary.main"
+    },
+    {
+        label: "Salaires",
+        icon: <MdAttachMoney size={24} />,
+        stateKey: "totalSalaries",
+        color: "success.main"
+    },
+    {
+        label: "Bonus",
+        icon: <MdStar size={24} />,
+        stateKey: "totalBonus",
+        color: "info.main"
+    },
+    {
+        label: "Déductions",
+        icon: <MdRemoveCircleOutline size={24} />,
+        stateKey: "totalDeductions",
+        color: "error.main"
+    },
+    {
+        label: "Fiches de Paie",
+        icon: <MdAssignment size={24} />,
+        stateKey: "totalPayrolls",
+        color: "secondary.main"
+    },
+];
 
 function Dashboard() {
-    const [totalEmployes, setTotalEmployes] = useState(0);
-    const [totalDepartments, setTotalDepartments] = useState(0);
-    const [totalSalaries, setTotalSalaries] = useState(0);
-    const [totalBonus, setTotalBonus] = useState(0);
-    const [totalDeductions, setTotalDeductions] = useState(0);
-    const [totalPayrolls, setTotalPayrolls] = useState(0);
+    const theme = useTheme();
+    const [stats, setStats] = useState({
+        totalEmployes: 0,
+        totalDepartments: 0,
+        totalSalaries: 0,
+        totalBonus: 0,
+        totalDeductions: 0,
+        totalPayrolls: 0,
+    });
 
     useEffect(() => {
-        const fetchEmployeesCount = async () => {
-            const response = await EmployeeService.getAllEmployees();
-            setTotalEmployes(response.data.data?.length || 0);
+        const fetchAll = async () => {
+            try {
+                const [
+                    employees, departments, salaries,
+                    bonuses, deductions, payrolls
+                ] = await Promise.all([
+                    EmployeeService.getAllEmployees(),
+                    DepartmentService.getAllDepartments(),
+                    SalaryService.getAllSalary(),
+                    BonusService.getAllBonus(),
+                    DeductionService.getAllDeduction(),
+                    PayrollService.getAllPayrolls()
+                ]);
+
+                setStats({
+                    totalEmployes: employees.data.data?.length || 0,
+                    totalDepartments: departments.data.data?.length || 0,
+                    totalSalaries: salaries.data.data?.length || 0,
+                    totalBonus: bonuses.data.data?.length || 0,
+                    totalDeductions: deductions.data.data?.length || 0,
+                    totalPayrolls: payrolls.data.data?.length || 0,
+                });
+            } catch (error) {
+                console.error("Erreur lors du chargement des statistiques:", error);
+            }
         };
 
-        const fetchDepartmentsCount = async () => {
-            const response = await DepartmentService.getAllDepartments();
-            setTotalDepartments(response.data.data?.length || 0);
-        };
-
-        const fecthSalariesCount = async () => {
-            const response = await SalaryService.getAllSalary();
-            setTotalSalaries(response.data.data?.length || 0);
-        };
-
-        const fecthBonusCount = async () => {
-            const response = await BonusService.getAllBonus();
-            setTotalBonus(response.data.data?.length || 0);
-        };
-
-        const fecthDeductionsCount = async () => {
-            const response = await DeductionService.getAllDeduction();
-            setTotalDeductions(response.data.data?.length || 0);
-        };
-
-        const fecthPayrollsCount = async () => {
-            const response = await PayrollService.getAllPayrolls();
-            setTotalPayrolls(response.data.data?.length || 0);
-        };
-
-        fetchEmployeesCount();
-        fetchDepartmentsCount();
-        fecthSalariesCount();
-        fecthBonusCount();
-        fecthDeductionsCount();
-        fecthPayrollsCount();
+        fetchAll();
     }, []);
 
     return (
         <div className="pc-container">
             <div className="pc-content">
-                {/* [ breadcrumb ] start */}
+                {/* Breadcrumb start */}
                 <div className="page-header">
                     <div className="page-block">
                         <div className="row align-items-center">
@@ -73,114 +142,31 @@ function Dashboard() {
                         </div>
                     </div>
                 </div>
-                {/* [ breadcrumb ] end */}
+                {/* Breadcrumb end */}
 
-                {/* [ Main Content ] start */}
-                <div className="row">
-                    <div className="col-xl-4 col-md-12">
-                        <div className="card comp-card">
-                            <div className="card-body">
-                                <div className="row align-items-center">
-                                    <div className="col">
-                                        <h5 className="m-b-20">Total des Départements</h5>
-                                        <h3>{totalDepartments}</h3>
-                                    </div>
-                                    <div className="col-auto">
-                                        <div className="bg-light-primary text-primary" style={{ borderRadius: '5px', padding: '2px', fontSize: '40px' }}>
-                                            <MdApartment />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="col-xl-4 col-md-12">
-                        <div className="card comp-card">
-                            <div className="card-body">
-                                <div className="row align-items-center">
-                                    <div className="col">
-                                        <h5 className="m-b-20">Total des Employés</h5>
-                                        <h3>{totalEmployes}</h3>
-                                    </div>
-                                    <div className="col-auto">
-                                        <div className="bg-light-primary text-primary" style={{ borderRadius: '5px', padding: '2px', fontSize: '40px' }}>
-                                            <MdPeople />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="col-xl-4 col-md-12">
-                        <div className="card comp-card">
-                            <div className="card-body">
-                                <div className="row align-items-center">
-                                    <div className="col">
-                                        <h5 className="m-b-20">Total des Salaires</h5>
-                                        <h3>{totalSalaries}</h3>
-                                    </div>
-                                    <div className="col-auto">
-                                        <div className="bg-light-primary text-primary" style={{ borderRadius: '5px', padding: '2px', fontSize: '40px' }}>
-                                            <MdAttachMoney />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="col-xl-4 col-md-12">
-                        <div className="card comp-card">
-                            <div className="card-body">
-                                <div className="row align-items-center">
-                                    <div className="col">
-                                        <h5 className="m-b-20">Total des Bonus</h5>
-                                        <h3>{totalBonus}</h3>
-                                    </div>
-                                    <div className="col-auto">
-                                        <div className="bg-light-primary text-primary" style={{ borderRadius: '5px', padding: '2px', fontSize: '40px' }}>
-                                            <MdStar />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="col-xl-4 col-md-12">
-                        <div className="card comp-card">
-                            <div className="card-body">
-                                <div className="row align-items-center">
-                                    <div className="col">
-                                        <h5 className="m-b-20">Total des Déductions</h5>
-                                        <h3>{totalDeductions}</h3>
-                                    </div>
-                                    <div className="col-auto">
-                                        <div className="bg-light-primary text-primary" style={{ borderRadius: '5px', padding: '2px', fontSize: '40px' }}>
-                                            <MdRemoveCircleOutline />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="col-xl-4 col-md-12">
-                        <div className="card comp-card">
-                            <div className="card-body">
-                                <div className="row align-items-center">
-                                    <div className="col">
-                                        <h5 className="m-b-20">Total des Fiches de Paie</h5>
-                                        <h3>{totalPayrolls}</h3>
-                                    </div>
-                                    <div className="col-auto">
-                                        <div className="bg-light-primary text-primary" style={{ borderRadius: '5px', padding: '2px', fontSize: '40px' }}>
-                                            <MdAssignment />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {/* [ Main Content ] end */}
-                </div>
+                <Container maxWidth="lg" sx={{ mt: 4, mb: 6 }}>
+                    <StatsGrid>
+                        {statsConfig.map(({ label, icon, stateKey, color }, idx) => (
+                            <StyledCard key={idx}>
+                                <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+                                        <Box>
+                                            <Typography className="text-muted mb-1" component="h3" sx={{ fontWeight: 700, mb: 0.5 }}>
+                                                {`Total des ${label}`}
+                                            </Typography>
+                                            <Typography className="text-muted mb-1" variant="h6" sx={{ fontWeight: 800 }}>
+                                                {stats[stateKey]}
+                                            </Typography>
+                                        </Box>
+                                        <CardIcon color={theme.palette[color.split('.')[0]][color.split('.')[1]]}>
+                                            {icon}
+                                        </CardIcon>
+                                    </Box>
+                                </CardContent>
+                            </StyledCard>
+                        ))}
+                    </StatsGrid>
+                </Container>
             </div>
         </div>
     );

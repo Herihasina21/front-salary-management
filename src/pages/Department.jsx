@@ -176,56 +176,68 @@ const Department = () => {
         {/* [ Main Content ] start */}
         <div className="row">
           <div className="col-12">
-            <div className="card mb-4">
-              <div className="card-header">
-                <div className="d-flex justify-content-between align-items-center">
-                  <h6>Liste des Départements ({filteredDepartments.length}/{departments.length})</h6>
-                  <button className="btn btn-primary d-flex align-items-center"
+            <div className="card">
+              <div className="card-header d-flex justify-content-between align-items-center">
+                <h6>Liste des Départements ({filteredDepartments.length}/{departments.length})</h6>
+                <div className="d-flex">
+                  <div className="input-group me-3" style={{ width: '300px' }}>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Rechercher..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <button className="btn btn-outline-secondary" type="button">
+                      <i className="ti ti-search"></i>
+                    </button>
+                  </div>
+                  <button
+                    className="btn btn-primary d-flex align-items-center"
                     data-bs-toggle="modal"
-                    data-bs-target="#addModal">
+                    data-bs-target="#addModal"
+                  >
                     <MdAdd className="me-2" /> Ajouter un Département
-                  </button>
-                </div>
-                <div className="input-group" style={{ width: '300px' }}>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Rechercher par nom du départment..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                  <button className="btn btn-outline-secondary" type="button">
-                    <i className="ti ti-search"></i>
                   </button>
                 </div>
               </div>
               <div className="card-body">
-                <div className="dt-responsive table-responsive">
-                  <table className="table table-striped table-bordered nowrap">
-                    <thead>
+                <div className="table-responsive">
+                  <table className="table table-hover align-middle table-bordered">
+                    <thead className="table-light">
                       <tr>
-                        <th>ID</th>
+                        <th className="border-start">ID</th>
                         <th>Nom du Département</th>
                         <th>Code du Département</th>
-                        <th>Actions</th>
+                        <th className="border-end">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredDepartments.length === 0 ? (
                         <tr>
-                          <td colSpan="6">
-                            {departments.length === 0
-                              ? "Aucun département trouvé"
-                              : "Aucun département ne correspond à votre recherche"}
+                          <td colSpan="4" className="text-center py-4 border-start border-end">
+                            {departments.length === 0 ? (
+                              <div>
+                                <p className="text-muted">Aucun département enregistré</p>
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="text-muted">Aucun résultat trouvé</p>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       ) : (
                         filteredDepartments.map(dept => (
                           <tr key={dept.id}>
-                            <td>{dept.id}</td>
-                            <td>{dept.name}</td>
-                            <td>{dept.code}</td>
-                            <td className="text-center">
+                            <td className="border-start">{dept.id}</td>
+                            <td>
+                              <div className="fw-medium">{dept.name}</div>
+                            </td>
+                            <td>
+                              <div className="fw-medium">{dept.code}</div>
+                            </td>
+                            <td className="text-center border-end">
                               <ul className="me-auto mb-0" style={{ display: 'flex', flexDirection: 'row', paddingLeft: 0, listStyle: 'none', marginLeft: '-5px' }}>
                                 <li className="align-bottom" style={{ marginRight: '10px' }}>
                                   <a className="avtar avtar-xs btn-link-primary"

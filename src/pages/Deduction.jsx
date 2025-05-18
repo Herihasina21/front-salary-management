@@ -196,10 +196,22 @@ const Deduction = () => {
 
         <div className="row">
           <div className="col-12">
-            <div className="card mb-4">
-              <div className="card-header">
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h6>Liste des Déductions ({filteredDeductions.length}/{deductions.length})</h6>
+            <div className="card">
+              <div className="card-header d-flex justify-content-between align-items-center">
+                <h6>Liste des Déductions ({filteredDeductions.length}/{deductions.length})</h6>
+                <div className="d-flex">
+                  <div className="input-group me-3" style={{ width: '300px' }}>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Rechercher..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <button className="btn btn-outline-secondary" type="button">
+                      <i className="ti ti-search"></i>
+                    </button>
+                  </div>
                   <button
                     className="btn btn-primary d-flex align-items-center"
                     data-bs-toggle="modal"
@@ -208,51 +220,49 @@ const Deduction = () => {
                     <MdAdd className="me-2" /> Ajouter une Déduction
                   </button>
                 </div>
-                <div className="input-group" style={{ width: '300px' }}>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Rechercher par type ou montant..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                  <button className="btn btn-outline-secondary" type="button">
-                    <i className="ti ti-search"></i>
-                  </button>
-                </div>
               </div>
               <div className="card-body">
-                <div className="dt-responsive table-responsive">
-                  <table className="table table-striped table-bordered nowrap">
-                    <thead>
+                <div className="table-responsive">
+                  <table className="table table-hover align-middle table-bordered">
+                    <thead className="table-light">
                       <tr>
-                        <th>ID</th>
+                        <th className="border-start">ID</th>
                         <th>Type</th>
                         <th>Montant</th>
-                        <th>Actions</th>
+                        <th className="border-end">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredDeductions.length === 0 ? (
                         <tr>
-                          <td colSpan="4">
-                            {deductions.length === 0
-                              ? "Aucune déduction trouvée"
-                              : "Aucune déduction ne correspond à votre recherche"}
+                          <td colSpan="4" className="text-center py-4 border-start border-end">
+                            {deductions.length === 0 ? (
+                              <div>
+                                <p className="text-muted">Aucune déduction enregistrée</p>
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="text-muted">Aucun résultat trouvé</p>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       ) : (
                         filteredDeductions.map(deduction => (
                           <tr key={deduction.id}>
-                            <td>{deduction.id}</td>
-                            <td>{deduction.type}</td>
+                            <td className="border-start">{deduction.id}</td>
                             <td>
-                              {new Intl.NumberFormat('fr-FR', {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                              }).format(deduction.amount)} Ar
+                              <div className="fw-medium">{deduction.type}</div>
                             </td>
-                            <td className="text-center">
+                            <td>
+                              <div className="fw-medium">
+                                {new Intl.NumberFormat('fr-FR', {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2
+                                }).format(deduction.amount)} Ar
+                              </div>
+                            </td>
+                            <td className="text-center border-end">
                               <ul className="me-auto mb-0" style={{ display: 'flex', flexDirection: 'row', paddingLeft: 0, listStyle: 'none', marginLeft: '-5px' }}>
                                 <li className="align-bottom" style={{ marginRight: '10px' }}>
                                   <a className="avtar avtar-xs btn-link-primary"

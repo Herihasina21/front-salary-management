@@ -1,126 +1,173 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Box, Typography, styled, keyframes, Card, CardContent, Grid } from '@mui/material';
+import { Box, Typography, styled, keyframes, Card, CardContent, Container, Tooltip, useTheme } from '@mui/material';
 import { TypeAnimation } from 'react-type-animation';
-import { MdDashboard, MdApartment, MdPeople, MdAttachMoney, MdAssignment, MdStar, MdRemoveCircleOutline } from "react-icons/md";
+import { MdApartment, MdPeople, MdAttachMoney, MdAssignment, MdStar, MdRemoveCircleOutline } from "react-icons/md";
 
-const welcomeAnimation = keyframes`
-  0% { opacity: 0; transform: translateY(-20px); }
-  100% { opacity: 1; transform: translateY(0); }
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 `;
 
-const AnimatedWelcome = styled(Typography)(({ theme }) => ({
-  animation: `${welcomeAnimation} 1s ease-out forwards`,
+const AnimatedTitle = styled(Typography)(({ theme }) => ({
+  animation: `${fadeIn} 1s ease-out`,
+  fontWeight: 800,
   color: theme.palette.primary.main,
-  fontWeight: 700,
   marginBottom: theme.spacing(2),
+  textShadow: '1px 1px 3px rgba(0,0,0,0.1)',
 }));
 
-const AnimatedCaption = styled(Typography)(({ theme }) => ({
-  animation: `${welcomeAnimation} 1.5s ease-out forwards`,
-  opacity: 0,
-  marginBottom: theme.spacing(4),
-  color: theme.palette.text.secondary,
-}));
-
-const MantisCard = styled(Card)(({ theme }) => ({
-  borderRadius: theme.shape.borderRadius,
-  boxShadow: theme.shadows[2],
-  transition: 'transform 0.3s ease-in-out',
-  height: '100%', 
-  display: 'flex', 
-  flexDirection: 'column', 
+const StyledCard = styled(Card)(({ theme }) => ({
+  borderRadius: '12px',
+  boxShadow: theme.shadows[3],
+  transition: 'all 0.3s ease',
+  borderLeft: `4px solid ${theme.palette.primary.main}`,
+  backgroundColor: theme.palette.background.paper,
+  height: '100%',
   '&:hover': {
-    transform: 'scale(1.02)',
+    transform: 'translateY(-5px)',
+    boxShadow: theme.shadows[6],
   },
 }));
 
-const MantisCardContent = styled(CardContent)(({ theme }) => ({
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  padding: theme.spacing(3),
-  flexGrow: 1,
-}));
-
-const FeatureIcon = styled(Box)(({ theme, color }) => ({
-  backgroundColor: color,
-  color: theme.palette.common.white,
+const CardIcon = styled(Box)(({ theme, color }) => ({
+  backgroundColor: theme.palette.mode === 'dark' ? `${color}30` : `${color}20`,
+  color: color,
   borderRadius: '50%',
-  padding: theme.spacing(2),
-  marginBottom: theme.spacing(2),
+  width: 48,
+  height: 48,
   display: 'flex',
   alignItems: 'center',
   justifyContent: 'center',
+  fontSize: '24px',
+}));
+
+const FeatureGrid = styled('div')(({ theme }) => ({
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+  gap: '24px',
+  [theme.breakpoints.down('sm')]: {
+    gridTemplateColumns: '1fr',
+  },
 }));
 
 function Home() {
+  const theme = useTheme();
   const [greeting, setGreeting] = useState('');
 
   useEffect(() => {
-    const now = new Date();
-    const hour = now.getHours();
-
-    if (hour >= 5 && hour < 12) {
-      setGreeting('Bonjour !');
-    } else if (hour >= 12 && hour < 18) {
-      setGreeting('Bon après-midi !');
-    } else {
-      setGreeting('Bonsoir !');
-    }
+    const hour = new Date().getHours();
+    if (hour >= 5 && hour < 12) setGreeting('Bonjour !');
+    else if (hour >= 12 && hour < 18) setGreeting('Bon après-midi !');
+    else setGreeting('Bonsoir !');
   }, []);
+
+  const features = [
+    {
+      icon: <MdApartment size={24} />,
+      title: "Gérer les Départements",
+      description: "Ajoutez, modifiez ou supprimez les services.",
+      color: theme.palette.grey[700],
+      path: "/department"
+    },
+    {
+      icon: <MdPeople size={24} />,
+      title: "Superviser les Employés",
+      description: "Gérez les profils et infos des collaborateurs.",
+      color: theme.palette.primary.main,
+      path: "/employes"
+    },
+    {
+      icon: <MdAttachMoney size={24} />,
+      title: "Gestion des Salaires",
+      description: "Créez et gérez les salaires par employé.",
+      color: theme.palette.success.main,
+      path: "/salary"
+    },
+    {
+      icon: <MdStar size={24} />,
+      title: "Attribuer des Bonus",
+      description: "Ajoutez ou retirez des primes facilement.",
+      color: theme.palette.info.main,
+      path: "/bonus"
+    },
+    {
+      icon: <MdRemoveCircleOutline size={24} />,
+      title: "Appliquer des Déductions",
+      description: "Gérez facilement les retenues salariales.",
+      color: theme.palette.error.main,
+      path: "/deduction"
+    },
+    {
+      icon: <MdAssignment size={24} />,
+      title: "Éditer les Fiches de Paie",
+      description: "Générez, téléchargez et envoyez les bulletins.",
+      color: theme.palette.secondary.main,
+      path: "/payroll"
+    }
+  ];
 
   return (
     <div className="pc-container">
       <div className="pc-content">
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh', p: 4 }}>
-          <AnimatedWelcome variant="h3" align="center">
-            {greeting} Bienvenue chez <TypeAnimation
-              sequence={[
-                `Izy M'Lay Entreprise`,
-                1500,
-                `votre plateforme de gestion salariale.`,
-                1500,
-              ]}
-              speed={50}
-              repeat={Infinity}
-            />
-          </AnimatedWelcome>
+        <Container maxWidth="lg" sx={{ mt: 6, mb: 6 }}>
+          <Box textAlign="center" mb={6}>
+            <AnimatedTitle variant="h3" component="h1">
+              {greeting} Bienvenue sur{' '}
+              <TypeAnimation
+                sequence={["Izy M'Lay Entreprise", 5000, "votre solution de gestion des salaires et de la paie", 5000]}
+                speed={50}
+                repeat={Infinity}
+                style={{ color: theme.palette.primary.dark }}
+              />
+            </AnimatedTitle>
+            <Typography variant="h6" color="text.secondary" sx={{ maxWidth: '700px', margin: '0 auto' }}>
+              Supervisez vos employés, maîtrisez la paie, et gardez le contrôle sur l'ensemble des opérations RH.
+            </Typography>
+          </Box>
 
-          <AnimatedCaption variant="subtitle1" align="center">
-            Simplifiez l'administration de la paie et la gestion de vos employés. Découvrez nos fonctionnalités clés :
-          </AnimatedCaption>
-
-          <Grid container spacing={5} sx={{ maxWidth: 'md', width: '100%', mb: 3 }}>
-            {[
-              { icon: <MdDashboard size={32} />, title: "Tableau de Bord", description: "Visualisez les données clés.", color: "#9C27B0", path: "/dashboard" },
-              { icon: <MdApartment size={32} />, title: "Gestion des Départements", description: "Organisez votre structure.", color: "#FFC107", path: "/department" },
-              { icon: <MdPeople size={32} />, title: "Gestion des Employés", description: "Gérez vos employés efficacement.", color: "#2196F3", path: "/employes" },
-              { icon: <MdAttachMoney size={32} />, title: "Gestion des Salaires", description: "Simplifiez la gestion de la paie.", color: "#4CAF50", path: "/salary" },
-              { icon: <MdStar size={32} />, title: "Gestion des Bonus", description: "Récompensez vos employés.", color: "#FF9800", path: "/bonus" },
-              { icon: <MdRemoveCircleOutline size={32} />, title: "Gestion des Déductions", description: "Gérez les retenues sur salaire.", color: "#F44336", path: "/deduction" },
-              { icon: <MdAssignment size={32} />, title: "Fiches de Paie", description: "Générez les bulletins de salaire.", color: "#673AB7", path: "/payroll" },
-            ].map((item, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index} sx={{ display: 'flex' }}> {/* Ajout de display: 'flex' */}
-                <Link to={item.path} style={{ textDecoration: 'none', width: '100%' }}>
-                  <MantisCard>
-                    <MantisCardContent>
-                      <FeatureIcon color={item.color}>
-                        {item.icon}
-                      </FeatureIcon>
-                      <Typography variant="h6" gutterBottom align="center" sx={{ minHeight: '64px', display: 'flex', alignItems: 'center' }}>
-                        {item.title}
-                      </Typography>
-                      <Typography variant="body2" color="textSecondary" align="center">
-                        {item.description}
-                      </Typography>
-                    </MantisCardContent>
-                  </MantisCard>
+          <FeatureGrid>
+            {features.map((item, index) => (
+              <div key={index}>
+                <Link to={item.path} style={{ textDecoration: 'none' }}>
+                  <Tooltip title={`Cliquez pour accéder à ${item.title}`} arrow>
+                    <StyledCard>
+                      <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, gap: 2 }}>
+                          <Box>
+                            <Typography className="text-muted mb-1" component="h3" sx={{ fontWeight: 700, mb: 0.5 }}>
+                              {item.title}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                              {item.description}
+                            </Typography>
+                          </Box>
+                          <CardIcon color={item.color}>
+                            {item.icon}
+                          </CardIcon>
+                        </Box>
+                        <Box sx={{ mt: 'auto', pt: 2 }}>
+                          <Typography
+                            variant="caption"
+                            color="primary"
+                            sx={{
+                              fontWeight: 600,
+                              '&:hover': {
+                                textDecoration: 'underline'
+                              }
+                            }}
+                          >
+                            Accéder →
+                          </Typography>
+                        </Box>
+                      </CardContent>
+                    </StyledCard>
+                  </Tooltip>
                 </Link>
-              </Grid>
+              </div>
             ))}
-          </Grid>
-        </Box>
+          </FeatureGrid>
+        </Container>
       </div>
     </div>
   );

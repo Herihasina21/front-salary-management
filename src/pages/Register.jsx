@@ -31,9 +31,6 @@ function Register() {
         if (!userData.username.trim()) {
             newErrors.username = "Le nom d'utilisateur est obligatoire.";
             isValid = false;
-        } else if (userData.username.length < 6) {
-            newErrors.username = "Le nom d'utilisateur doit contenir au moins 6 caractères.";
-            isValid = false;
         }
 
         if (!userData.email.trim()) {
@@ -47,8 +44,8 @@ function Register() {
         if (!userData.password.trim()) {
             newErrors.password = 'Le mot de passe est obligatoire.';
             isValid = false;
-        } else if (userData.password.length < 6) {
-            newErrors.password = 'Le mot de passe doit contenir au moins 6 caractères.';
+        } else if (userData.password.length < 8) {
+            newErrors.password = 'Le mot de passe doit contenir au moins 8 caractères.';
             isValid = false;
         }
 
@@ -159,7 +156,7 @@ function Register() {
                                             transform: errors.password ? 'translateX(-20px)' : 'none'
                                         }}
                                     >
-                                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                        {showPassword ? <FaEye /> : <FaEyeSlash />}
                                     </button>
                                     {errors.password && (
                                         <div className="invalid-feedback d-block">{errors.password}</div>

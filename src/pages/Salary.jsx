@@ -208,13 +208,24 @@ const Salary = () => {
             </div>
           </div>
         </div>
-
         <div className="row">
           <div className="col-12">
-            <div className="card mb-4">
-              <div className="card-header">
-                <div className="d-flex justify-content-between align-items-center mb-3">
-                  <h6>Liste des Salaires ({filteredSalaries.length}/{salaries.length})</h6>
+            <div className="card">
+              <div className="card-header d-flex justify-content-between align-items-center">
+                <h6>Liste des Salaires ({filteredSalaries.length}/{salaries.length})</h6>
+                <div className="d-flex">
+                  <div className="input-group me-3" style={{ width: '300px' }}>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Rechercher par employé ou montant..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <button className="btn btn-outline-secondary" type="button">
+                      <i className="ti ti-search"></i>
+                    </button>
+                  </div>
                   <button
                     className="btn btn-primary d-flex align-items-center"
                     data-bs-toggle="modal"
@@ -223,54 +234,52 @@ const Salary = () => {
                     <MdAdd className="me-2" /> Ajouter un Salaire
                   </button>
                 </div>
-                <div className="input-group" style={{ width: '300px' }}>
-                  <input
-                    type="text"
-                    className="form-control"
-                    placeholder="Rechercher par employé ou salaire..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
-                  <button className="btn btn-outline-secondary" type="button">
-                    <i className="ti ti-search"></i>
-                  </button>
-                </div>
               </div>
               <div className="card-body">
-                <div className="dt-responsive table-responsive">
-                  <table className="table table-striped table-bordered nowrap">
-                    <thead>
+                <div className="table-responsive">
+                  <table className="table table-hover align-middle table-bordered">
+                    <thead className="table-light">
                       <tr>
-                        <th>ID</th>
+                        <th className="border-start">ID</th>
                         <th>Salaire de base</th>
                         <th>Employé</th>
-                        <th>Actions</th>
+                        <th className="border-end">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {filteredSalaries.length === 0 ? (
                         <tr>
-                          <td colSpan="4">
-                            {salaries.length === 0
-                              ? "Aucun salaire trouvé"
-                              : "Aucun salaire ne correspond à votre recherche"}
+                          <td colSpan="4" className="text-center py-4 border-start border-end">
+                            {salaries.length === 0 ? (
+                              <div>
+                                <p className="text-muted">Aucun salaire enregistré</p>
+                              </div>
+                            ) : (
+                              <div>
+                                <p className="text-muted">Aucun résultat trouvé</p>
+                              </div>
+                            )}
                           </td>
                         </tr>
                       ) : (
                         filteredSalaries.map(salary => (
                           <tr key={salary.id}>
-                            <td>{salary.id}</td>
+                            <td className="border-start">{salary.id}</td>
                             <td>
-                              {new Intl.NumberFormat('fr-FR', {
-                                minimumFractionDigits: 2,
-                                maximumFractionDigits: 2
-                              }).format(salary.baseSalary)} Ar
+                              <div className="fw-medium">
+                                {new Intl.NumberFormat('fr-FR', {
+                                  minimumFractionDigits: 2,
+                                  maximumFractionDigits: 2
+                                }).format(salary.baseSalary)} Ar
+                              </div>
                             </td>
                             <td>
-                              {employees.find(emp => emp.id === salary.employee?.id)?.name + ' '}
-                              {employees.find(emp => emp.id === salary.employee?.id)?.firstName}
+                              <div className="fw-medium">
+                                {employees.find(emp => emp.id === salary.employee?.id)?.name + ' '}
+                                {employees.find(emp => emp.id === salary.employee?.id)?.firstName}
+                              </div>
                             </td>
-                            <td className="text-center">
+                            <td className="text-center border-end">
                               <ul className="me-auto mb-0" style={{ display: 'flex', flexDirection: 'row', paddingLeft: 0, listStyle: 'none', marginLeft: '-5px' }}>
                                 <li className="align-bottom" style={{ marginRight: '10px' }}>
                                   <a className="avtar avtar-xs btn-link-primary"

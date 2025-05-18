@@ -138,7 +138,7 @@ function Login() {
                                             transform: errors.password ? 'translateX(-20px)' : 'none'
                                         }}
                                     >
-                                        {showPassword ? <FaEyeSlash /> : <FaEye />}
+                                        {showPassword ? <FaEye /> : <FaEyeSlash />}
                                     </button>
                                     {errors.password && (
                                         <div className="invalid-feedback d-block">{errors.password}</div>
