@@ -157,7 +157,7 @@ function Login() {
                                             Rester connecté
                                         </label>
                                     </div>
-                                    <a href="/forgot-password" className="text-secondary f-w-400">Mot de passe oublié ?</a>
+                                    <Link to="/forgot-password" className="text-secondary f-w-400">Mot de passe oublié ?</Link>
                                 </div>
                                 <div className="d-grid mt-4">
                                     <button

@@ -68,6 +68,35 @@ const AuthService = {
     }
   },
 
+  async forgotPassword(email) {
+    try {
+      // Creation nouvelle instance (tsisy intercepteur)
+      const tempAxios = api.create({
+        baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8080/api',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      const response = await tempAxios.post('auth/forgot-password', { email });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  },
+
+  async resetPassword(token, newPassword) {
+    try {
+      const response = await api.post('auth/reset-password', {
+        token,
+        newPassword
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  },
+
   isAuthenticated() {
     const token = this.getAuthToken();
     if (!token) return false;

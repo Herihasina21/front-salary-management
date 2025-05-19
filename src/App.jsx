@@ -15,6 +15,8 @@ import Payroll from './pages/Payroll';
 import Bonus from './pages/Bonus';
 import Deduction from './pages/Deduction';
 import UserProfil from './pages/UserProfil';
+import ForgotPswd from './pages/ForgotPswd';
+import ResetPswd from './pages/ResetPswd';
 
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
@@ -23,7 +25,7 @@ import Footer from './components/Footer';
 
 function LayoutWrapper() {
   const location = useLocation();
-  const isAuthPage = ['/login', '/register'].includes(location.pathname);
+  const isAuthPage = ['/login', '/register', '/forgot-password', '/reset-password'].includes(location.pathname);
   const isAuthenticated = AuthService.isAuthenticated();
 
   useEffect(() => {
@@ -64,7 +66,7 @@ function LayoutWrapper() {
   return (
     <div className="content">
       <PreLoader />
-      
+
       {/* Ne pas afficher Navbar et Sidebar sur les pages d'authentification */}
       {!isAuthPage && (
         <>
@@ -72,9 +74,11 @@ function LayoutWrapper() {
           <Sidebar />
         </>
       )}
-      
+
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/forgot-password" element={<ForgotPswd />} />
+        <Route path="/reset-password" element={<ResetPswd />} />
         <Route path="/register" element={<Register />} />
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
@@ -84,13 +88,13 @@ function LayoutWrapper() {
         <Route path="/payroll" element={<Payroll />} />
         <Route path="/bonus" element={<Bonus />} />
         <Route path="/deduction" element={<Deduction />} />
-        <Route path="/profil" element={<UserProfil/>} /> 
+        <Route path="/profil" element={<UserProfil />} />
         <Route path="*" element={<Navigate to={isAuthenticated ? "/" : "/login"} />} />
       </Routes>
-      
+
       {/* Ne pas afficher Footer sur les pages d'authentification */}
       {!isAuthPage && <Footer />}
-      
+
       <ToastContainer />
     </div>
   );
