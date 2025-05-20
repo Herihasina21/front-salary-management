@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { EmployeeService } from '../services/EmployeeService';
 import { DepartmentService } from '../services/DepartmentService';
@@ -56,6 +56,9 @@ const Employee = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('personal');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [employeeToDelete, setEmployeeToDelete] = useState(null);
+  const deleteModalRef = useRef();
 
   const departmentOptions = departments.map(dep => ({ value: dep.id, label: dep.name }));
 
@@ -301,19 +304,27 @@ const Employee = () => {
   };
 
   const deleteEmployee = async (id) => {
-    if (window.confirm("Confirmer la suppression ?")) {
-      try {
-        const response = await EmployeeService.deleteEmployee(id);
+    setEmployeeToDelete(id);
+    setShowDeleteModal(true);
+  };
 
-        const message = response.data.message;
-        toast.success(message);
+  const confirmDelete = async () => {
+    if (!employeeToDelete) return;
 
-        await fetchEmployees();
-      } catch (error) {
-        console.error(error);
-        const message = error.response?.data?.message || "Erreur lors de la suppression";
-        toast.error(message);
-      }
+    setLoading(true);
+    setShowDeleteModal(false);
+
+    try {
+      const response = await EmployeeService.deleteEmployee(employeeToDelete);
+      toast.success(response.data.message);
+      await fetchEmployees();
+    } catch (error) {
+      console.error(error);
+      const message = error.response?.data?.message || "Erreur lors de la suppression";
+      toast.error(message);
+    } finally {
+      setLoading(false);
+      setEmployeeToDelete(null);
     }
   };
 
@@ -331,7 +342,6 @@ const Employee = () => {
   });
 
   const handleNextTab = () => {
-    // Valider seulement les champs de l'onglet personnel
     const personalFields = ['name', 'firstName', 'email', 'phone', 'address'];
     let hasErrors = false;
     const errorFields = [];
@@ -381,7 +391,7 @@ const Employee = () => {
       <ul className="nav nav-tabs" id="employeeTabs" role="tablist">
         <li className="nav-item flex-fill" role="presentation">
           <button
-            className={`nav-link d-flex justify-content-between align-items-center w-100 active ${activeTab === 'personal' ? 'active' : ''}`}
+            className={`nav-link d-flex justify-content-between align-items-center w-100 ${activeTab === 'personal' ? 'active' : ''}`}
             id="personal-tab"
             type="button"
             role="tab"
@@ -514,6 +524,7 @@ const Employee = () => {
               options={posteTypeOptions}
               isClearable
               placeholder="-- Sélectionner --"
+              noOptionsMessage={() => "Aucune option disponible"}
               className={errors.position ? 'is-invalid' : ''}
               classNamePrefix="react-select"
             />
@@ -545,6 +556,7 @@ const Employee = () => {
               options={contractTypeOptions}
               isClearable
               placeholder="-- Sélectionner --"
+              noOptionsMessage={() => "Aucune option disponible"}
               className={errors.contractType ? 'is-invalid' : ''}
               classNamePrefix="react-select"
             />
@@ -564,6 +576,7 @@ const Employee = () => {
               options={departmentOptions}
               isClearable
               placeholder="-- Sélectionner --"
+              noOptionsMessage={() => "Aucune option disponible"}
               className={errors.department ? 'is-invalid' : ''}
               classNamePrefix="react-select"
             />
@@ -834,6 +847,51 @@ const Employee = () => {
                     </button>
                   </>
                 )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de suppression */}
+      {showDeleteModal && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content" ref={deleteModalRef}>
+              <div className="modal-header">
+                <h5 className="modal-title">Confirmer la suppression</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowDeleteModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p>Êtes-vous sûr de vouloir supprimer cet employé ? Cette action est irréversible.</p>
+                {employeeToDelete && (
+                  <div className="alert alert-info">
+                    <i className="ti ti-alert-circle me-2"></i>
+                    <strong>Employé concerné :</strong> {employees.find(e => e.id === employeeToDelete)?.name} {employees.find(e => e.id === employeeToDelete)?.firstName}
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={loading}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={confirmDelete}
+                  disabled={loading}
+                >
+                  {loading ? 'Suppression en cours...' : 'Confirmer la suppression'}
+                </button>
               </div>
             </div>
           </div>

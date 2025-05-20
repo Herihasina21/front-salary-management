@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { DepartmentService } from '../services/DepartmentService';
 import { MdAdd } from "react-icons/md";
@@ -15,6 +15,9 @@ const Department = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [departmentToDelete, setDepartmentToDelete] = useState(null);
+  const deleteModalRef = useRef();
 
   const fetchDepartments = async () => {
     try {
@@ -36,7 +39,6 @@ const Department = () => {
     let updatedValue = value;
 
     if (name === 'name') {
-      // Remove any numbers from the input
       updatedValue = value.replace(/[0-9]/g, '');
     }
 
@@ -48,7 +50,6 @@ const Department = () => {
       setNewDepartment(updatedDepartment);
     }
   };
-
 
   const validateForm = (department) => {
     let isValid = true;
@@ -123,20 +124,27 @@ const Department = () => {
   };
 
   const deleteDepartment = async (id) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce département ?')) {
-      setLoading(true);
+    setDepartmentToDelete(id);
+    setShowDeleteModal(true);
+  };
 
-      try {
-        const response = await DepartmentService.deleteDepartment(id);
-        toast.success(response.data.message); // Afficher le message de succès
-        await fetchDepartments();
-      } catch (error) {
-        console.error(error);
-        const message = error.response?.data?.message || 'Erreur lors de la suppression du département';
-        toast.error(message); // Afficher le message d'erreur spécifique du backend
-      } finally {
-        setLoading(false);
-      }
+  const confirmDelete = async () => {
+    if (!departmentToDelete) return;
+
+    setLoading(true);
+    setShowDeleteModal(false);
+
+    try {
+      const response = await DepartmentService.deleteDepartment(departmentToDelete);
+      toast.success(response.data.message);
+      await fetchDepartments();
+    } catch (error) {
+      console.error(error);
+      const message = error.response?.data?.message || 'Erreur lors de la suppression du département';
+      toast.error(message);
+    } finally {
+      setLoading(false);
+      setDepartmentToDelete(null);
     }
   };
 
@@ -310,6 +318,51 @@ const Department = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal de suppression */}
+      {showDeleteModal && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content" ref={deleteModalRef}>
+              <div className="modal-header">
+                <h5 className="modal-title">Confirmer la suppression</h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowDeleteModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <p>Êtes-vous sûr de vouloir supprimer ce département ? Cette action est irréversible.</p>
+                {departmentToDelete && (
+                  <div className="alert alert-info">
+                    <i className="ti ti-alert-circle me-2"></i>
+                    <strong>Département concerné :</strong> {departments.find(e => e.id === departmentToDelete)?.name}
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowDeleteModal(false)}
+                  disabled={loading}
+                >
+                  Annuler
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  onClick={confirmDelete}
+                  disabled={loading}
+                >
+                  {loading ? 'Suppression en cours...' : 'Confirmer la suppression'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

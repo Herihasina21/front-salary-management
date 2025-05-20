@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { SalaryService } from '../services/SalaryService';
 import { EmployeeService } from '../services/EmployeeService';
@@ -21,12 +21,15 @@ const Salary = () => {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
+  const [searchTerm, setSearchTerm] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [salaryToDelete, setSalaryToDelete] = useState(null);
+  const deleteModalRef = useRef();
 
   const employeeOptions = employees.map(emp => ({
     value: emp.id,
     label: `${emp.name} ${emp.firstName}`
   }));
-  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     fetchSalaries();
@@ -163,19 +166,27 @@ const Salary = () => {
   };
 
   const deleteSalary = async (id) => {
-    if (window.confirm("Êtes-vous sûr de vouloir supprimer ce salaire ?")) {
-      setLoading(true);
-      try {
-        const response = await SalaryService.deleteSalary(id);
-        toast.success(response.data.message);
-        await fetchSalaries();
-      } catch (error) {
-        console.error('Erreur lors de la suppression:', error);
-        const errorMsg = error.response?.data?.message
-        toast.error(errorMsg);
-      } finally {
-        setLoading(false);
-      }
+    setSalaryToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!salaryToDelete) return;
+
+    setLoading(true);
+    setShowDeleteModal(false);
+
+    try {
+      const response = await SalaryService.deleteSalary(salaryToDelete);
+      toast.success(response.data.message);
+      await fetchSalaries();
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      const errorMsg = error.response?.data?.message || 'Erreur lors de la suppression du salaire';
+      toast.error(errorMsg);
+    } finally {
+      setLoading(false);
+      setSalaryToDelete(null);
     }
   };
 
@@ -218,7 +229,7 @@ const Salary = () => {
                     <input
                       type="text"
                       className="form-control"
-                      placeholder="Rechercher par employé ou montant..."
+                      placeholder="Rechercher..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -316,7 +327,7 @@ const Salary = () => {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title" id="addModalLabel">Ajouter un Salaire</h5>
-                <button type="button" className="btn-close" id="closeAddModal" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" className="btn-close" id="closeAddModal" data-bs-dismiss="modal" aria-label="Close" onClick={resetForm}></button>
               </div>
               <div className="modal-body">
                 {renderSalaryForm(newSalary, handleInputChange, employees, employeeOptions, false, errors)}
@@ -337,7 +348,7 @@ const Salary = () => {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title" id="editModalLabel">Modifier un Salaire</h5>
-                <button type="button" className="btn-close" id="closeEditModal" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" className="btn-close" id="closeEditModal" data-bs-dismiss="modal" aria-label="Close" onClick={resetForm}></button>
               </div>
               <div className="modal-body">
                 {editingSalary && renderSalaryForm(editingSalary, handleInputChange, employees, employeeOptions, true, errors)}
@@ -351,6 +362,50 @@ const Salary = () => {
             </div>
           </div>
         </div>
+        {/* Modal de suppression */}
+        {showDeleteModal && (
+          <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content" ref={deleteModalRef}>
+                <div className="modal-header">
+                  <h5 className="modal-title">Confirmer la suppression</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowDeleteModal(false)}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <p>Êtes-vous sûr de vouloir supprimer ce salaire ? Cette action est irréversible.</p>
+                  {salaryToDelete && (
+                    <div className="alert alert-info">
+                      <i className="ti ti-alert-circle me-2"></i>
+                      <strong>Salaire concerné :</strong> {salaries.find(e => e.id === salaryToDelete)?.baseSalary} Ar pour l'employé {employees.find(e => e.id === salaries.find(s => s.id === salaryToDelete)?.employee?.id)?.name} {employees.find(e => e.id === salaries.find(s => s.id === salaryToDelete)?.employee?.id)?.firstName}.
+                    </div>
+                  )}
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowDeleteModal(false)}
+                    disabled={loading}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={confirmDelete}
+                    disabled={loading}
+                  >
+                    {loading ? 'Suppression en cours...' : 'Confirmer la suppression'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -417,6 +472,7 @@ const renderSalaryForm = (salary, handleChange, employees, employeeOptions, isEd
             options={employeeOptions}
             isClearable
             placeholder="-- Sélectionner un employé --"
+            noOptionsMessage={() => "Aucune option disponible"}
             className={errors.employeeId ? 'is-invalid' : ''}
             classNamePrefix="react-select"
           />

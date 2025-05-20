@@ -111,6 +111,7 @@ function ForgotPswd() {
                                 </>
                             ) : (
                                 <div className="alert alert-success">
+                                    <i className="ti ti-circle-check me-2 animate-bounce"></i>
                                     Un email contenant les instructions pour réinitialiser votre mot de passe a été envoyé à l'adresse fournie.
                                 </div>
                             )}

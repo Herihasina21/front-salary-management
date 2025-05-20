@@ -66,7 +66,7 @@ function Home() {
     {
       icon: <MdApartment size={24} />,
       title: "Gérer les Départements",
-      description: "Ajoutez, modifiez ou supprimez les services.",
+      description: "Ajoutez, modifiez ou supprimez les département.",
       color: theme.palette.grey[700],
       path: "/department"
     },

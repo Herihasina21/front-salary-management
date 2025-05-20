@@ -109,6 +109,7 @@ function ResetPswd() {
 
                             {success ? (
                                 <div className="alert alert-success">
+                                    <i className="ti ti-circle-check me-2 animate-bounce"></i>
                                     Votre mot de passe a été réinitialisé avec succès. Vous allez être redirigé vers la page de connexion.
                                 </div>
                             ) : (

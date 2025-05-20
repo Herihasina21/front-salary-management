@@ -39,8 +39,8 @@ function Login() {
         if (!credentials.password.trim()) {
             newErrors.password = 'Le mot de passe est obligatoire.';
             isValid = false;
-        } else if (credentials.password.length < 6) {
-            newErrors.password = 'Le mot de passe doit contenir au moins 6 caractères.';
+        } else if (credentials.password.length < 8) {
+            newErrors.password = 'Le mot de passe doit contenir au moins 8 caractères.';
             isValid = false;
         }
 

@@ -33,6 +33,8 @@ export default function Bonus() {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [bonusToDelete, setBonusToDelete] = useState(null);
 
   const fetchBonuses = async () => {
     setLoading(true);
@@ -131,17 +133,26 @@ export default function Bonus() {
     }
   };
 
-  const deleteBonus = async (id) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce bonus ?')) {
-      try {
-        const response = await BonusService.deleteBonus(id);
-        toast.success(response.data.message);
-        await fetchBonuses();
-      } catch (error) {
-        console.error('Erreur lors de la suppression du bonus :', error);
-        const message = error.response?.data?.message || "Erreur lors de la suppression du bonus";
-        toast.error(message);
-      }
+  const handleDeleteClick = (id) => {
+    setBonusToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteBonus = async () => {
+    if (!bonusToDelete) return;
+    setLoading(true);
+    setShowDeleteModal(false);
+    try {
+      const response = await BonusService.deleteBonus(bonusToDelete);
+      toast.success(response.data.message);
+      await fetchBonuses();
+    } catch (error) {
+      console.error('Erreur lors de la suppression du bonus :', error);
+      const message = error.response?.data?.message || "Erreur lors de la suppression du bonus";
+      toast.error(message);
+    } finally {
+      setLoading(false);
+      setBonusToDelete(null);
     }
   };
 
@@ -261,7 +272,7 @@ export default function Bonus() {
                                 </li>
                                 <li className="align-bottom">
                                   <a className="avtar avtar-xs btn-link-danger"
-                                    onClick={() => deleteBonus(bonus.id)}
+                                    onClick={() => handleDeleteClick(bonus.id)}
                                     style={{ cursor: 'pointer' }}>
                                     <i className="ti ti-trash f-18" style={{ color: 'red' }}></i>
                                   </a>
@@ -285,7 +296,7 @@ export default function Bonus() {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title" id="addBonusModalLabel">Ajouter un Bonus</h5>
-                <button type="button" className="btn-close" id="closeAddBonusModal" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" className="btn-close" id="closeAddBonusModal" data-bs-dismiss="modal" aria-label="Close" onClick={resetNewBonus}></button>
               </div>
               <div className="modal-body">
                 {renderBonusForm(newBonus, handleInputChange, errors)}
@@ -306,7 +317,7 @@ export default function Bonus() {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title" id="editBonusModalLabel">Modifier le Bonus</h5>
-                <button type="button" className="btn-close" id="closeEditBonusModal" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" className="btn-close" id="closeEditBonusModal" data-bs-dismiss="modal" aria-label="Close" onClick={resetNewBonus}></button>
               </div>
               <div className="modal-body">
                 {editingBonus && renderBonusForm(editingBonus, (e) => handleInputChange(e, true), errors)}
@@ -320,6 +331,51 @@ export default function Bonus() {
             </div>
           </div>
         </div>
+
+        {/* Modal de suppression */}
+        {showDeleteModal && (
+          <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Confirmer la suppression</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowDeleteModal(false)}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <p>Êtes-vous sûr de vouloir supprimer ce bonus ?</p>
+                  {bonusToDelete && (
+                    <div className="alert alert-info">
+                      <i className="ti ti-alert-circle me-2"></i>
+                      <strong>Bonus concerné :</strong> Type "{bonuses.find(b => b.id === bonusToDelete)?.type}" d'un montant de {(bonuses.find(b => b.id === bonusToDelete)?.amount)} Ar.
+                    </div>
+                  )}
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowDeleteModal(false)}
+                    disabled={loading}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={confirmDeleteBonus}
+                    disabled={loading}
+                  >
+                    {loading ? 'Suppression en cours...' : 'Supprimer'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -377,6 +433,7 @@ function renderBonusForm(bonus, onChange, errors) {
           options={bonusTypeOptions}
           isClearable
           placeholder="-- Sélectionner --"
+          noOptionsMessage={() => "Aucune option disponible"}
           className={errors.type ? 'is-invalid' : ''}
           classNamePrefix="react-select"
         />

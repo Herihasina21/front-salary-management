@@ -34,6 +34,8 @@ const Deduction = () => {
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deductionToDelete, setDeductionToDelete] = useState(null);
 
   const fetchDeductions = async () => {
     try {
@@ -148,22 +150,28 @@ const Deduction = () => {
     setErrors({});
   };
 
-  const deleteDeduction = async (id) => {
-    if (window.confirm("Confirmer la suppression ?")) {
-      try {
-        setLoading(true);
-        const response = await DeductionService.deleteDeduction(id);
-        const message = response.data.message;
-        toast.success(message);
-        await fetchDeductions();
-      } catch (error) {
-        console.error(error);
-        console.error("Réponse d'erreur (suppression) :", error.response);
-        const message = error.response?.data?.message || "Erreur lors de la suppression de la déduction";
-        toast.error(message);
-      } finally {
-        setLoading(false);
-      }
+  const handleDeleteClick = (id) => {
+    setDeductionToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeleteDeduction = async () => {
+    if (!deductionToDelete) return;
+    setLoading(true);
+    setShowDeleteModal(false);
+    try {
+      const response = await DeductionService.deleteDeduction(deductionToDelete);
+      const message = response.data.message;
+      toast.success(message);
+      await fetchDeductions();
+    } catch (error) {
+      console.error(error);
+      console.error("Réponse d'erreur (suppression) :", error.response);
+      const message = error.response?.data?.message || "Erreur lors de la suppression de la déduction";
+      toast.error(message);
+    } finally {
+      setLoading(false);
+      setDeductionToDelete(null);
     }
   };
 
@@ -275,7 +283,7 @@ const Deduction = () => {
                                 </li>
                                 <li className="align-bottom">
                                   <a className="avtar avtar-xs btn-link-danger"
-                                    onClick={() => deleteDeduction(deduction.id)}
+                                    onClick={() => handleDeleteClick(deduction.id)}
                                     style={{ cursor: 'pointer' }}>
                                     <i className="ti ti-trash f-18" style={{ color: 'red' }}></i>
                                   </a>
@@ -299,7 +307,7 @@ const Deduction = () => {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title" id="addModalLabel">Ajouter une déduction</h5>
-                <button type="button" className="btn-close" id="closeAddModal" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" className="btn-close" id="closeAddModal" data-bs-dismiss="modal" aria-label="Close" onClick={resetForm}></button>
               </div>
               <div className="modal-body">
                 {renderDeductionForm(newDeduction, handleInputChange, false, errors)}
@@ -320,7 +328,7 @@ const Deduction = () => {
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title" id="editModalLabel">Modifier une déduction</h5>
-                <button type="button" className="btn-close" id="closeEditModal" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" className="btn-close" id="closeEditModal" data-bs-dismiss="modal" aria-label="Close" onClick={resetForm}></button>
               </div>
               <div className="modal-body">
                 {editingDeduction && renderDeductionForm(editingDeduction, handleInputChange, true, errors)}
@@ -334,6 +342,51 @@ const Deduction = () => {
             </div>
           </div>
         </div>
+
+        {/* Modal de suppression */}
+        {showDeleteModal && (
+          <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Confirmer la suppression</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowDeleteModal(false)}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <p>Êtes-vous sûr de vouloir supprimer cette déduction ?</p>
+                  {deductionToDelete && (
+                    <div className="alert alert-info">
+                      <i className="ti ti-alert-circle me-2"></i>
+                      <strong>Déduction concernée :</strong> Type "{deductions.find(d => d.id === deductionToDelete)?.type}" d'un montant de {(deductions.find(d => d.id === deductionToDelete)?.amount)} Ar.
+                    </div>
+                  )}
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowDeleteModal(false)}
+                    disabled={loading}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={confirmDeleteDeduction}
+                    disabled={loading}
+                  >
+                    {loading ? 'Suppression en cours...' : 'Supprimer'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -394,6 +447,7 @@ const renderDeductionForm = (deduction, handleChange, isEditing = false, errors)
           options={deductionTypeOptions}
           isClearable
           placeholder="-- Sélectionner --"
+          noOptionsMessage={() => "Aucune option disponible"}
           className={errors.type ? 'is-invalid' : ''}
           classNamePrefix="react-select"
         />

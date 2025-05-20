@@ -54,8 +54,8 @@ export default function UserProfile() {
         if (!passwordData.new) {
             newErrors.new = 'Le nouveau mot de passe est requis';
             isValid = false;
-        } else if (passwordData.new.length < 6) {
-            newErrors.new = 'Le mot de passe doit contenir au moins 6 caractères';
+        } else if (passwordData.new.length < 8) {
+            newErrors.new = 'Le mot de passe doit contenir au moins 8 caractères';
             isValid = false;
         }
 

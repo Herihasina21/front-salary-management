@@ -24,6 +24,9 @@ const Payroll = () => {
   const [errors, setErrors] = useState({});
   const [allBonuses, setAllBonuses] = useState([]);
   const [allDeductions, setAllDeductions] = useState([]);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [payrollToDelete, setPayrollToDelete] = useState(null);
+  const [showSendAllModal, setShowSendAllModal] = useState(false);
 
   const employeeOptions = employees.map(emp => ({
     value: emp.id,
@@ -275,22 +278,27 @@ const Payroll = () => {
     }
   };
 
-  const deletePayroll = async (id) => {
-    if (window.confirm("Confirmer la suppression ?")) {
-      try {
-        setLoading(true);
-        const response = await PayrollService.deletePayroll(id);
-        const message = response.data.message;
-        toast.success(message);
-        await fetchPayrolls();
-      } catch (error) {
-        console.error(error);
-        console.error("Réponse d'erreur (suppression) :", error.response);
-        const message = error.response?.data?.message || "Erreur lors de la suppression de la fiche de paie";
-        toast.error(message);
-      } finally {
-        setLoading(false);
-      }
+  const handleDeleteClick = (id) => {
+    setPayrollToDelete(id);
+    setShowDeleteModal(true);
+  };
+
+  const confirmDeletePayroll = async () => {
+    if (!payrollToDelete) return;
+    setLoading(true);
+    setShowDeleteModal(false);
+    try {
+      const response = await PayrollService.deletePayroll(payrollToDelete);
+      const message = response.data.message;
+      toast.success(message);
+      await fetchPayrolls();
+    } catch (error) {
+      console.error(error);
+      const message = error.response?.data?.message || "Erreur lors de la suppression de la fiche de paie";
+      toast.error(message);
+    } finally {
+      setLoading(false);
+      setPayrollToDelete(null);
     }
   };
 
@@ -349,34 +357,37 @@ const Payroll = () => {
     }
   };
 
-  const sendPayrollEmailToAll = async () => {
-    if (window.confirm("Confirmer l'envoi de toutes les fiches de paie par email ?")) {
-      try {
-        setLoading(true);
-        toast.info("Envoi des fiches de paie en cours...");
-        const validPayrolls = payrolls.filter(payroll => {
-          const employee = employees.find(emp => emp.id === payroll.employeeId);
-          return payroll.netSalary > 0 &&
-            employee &&
-            employee.email &&
-            /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(employee.email);
-        });
+  const handleSendAllClick = () => {
+    setShowSendAllModal(true);
+  };
 
-        if (validPayrolls.length === 0) {
-          toast.error("Aucune fiche de paie valide à envoyer");
-          return;
-        }
+  const confirmSendAllEmails = async () => {
+    setShowSendAllModal(false);
+    try {
+      setLoading(true);
 
-        const response = await PayrollService.sendPayrollEmailToAll();
-        const message = response.data.message;
-        toast.success(message);
-      } catch (error) {
-        console.error(error);
-        const message = error.response?.data?.message || "Erreur lors de l'envoi des fiches de paie";
-        toast.error(message);
-      } finally {
-        setLoading(false);
+      const validPayrolls = payrolls.filter(payroll => {
+        const employee = employees.find(emp => emp.id === payroll.employeeId);
+        return payroll.netSalary > 0 &&
+          employee &&
+          employee.email &&
+          /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(employee.email);
+      });
+
+      if (validPayrolls.length === 0) {
+        toast.error("Aucune fiche de paie valide à envoyer");
+        return;
       }
+      toast.info("Envoi des fiches de paie en cours...");
+      const response = await PayrollService.sendPayrollEmailToAll();
+      const message = response.data.message;
+      toast.success(message);
+    } catch (error) {
+      console.error(error);
+      const message = error.response?.data?.message || "Erreur lors de l'envoi des fiches de paie";
+      toast.error(message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -440,6 +451,7 @@ const Payroll = () => {
             options={employeeOptions}
             isClearable
             placeholder="-- Sélectionner un employé --"
+            noOptionsMessage={() => "Aucune option disponible"}
             className={errors.employeeId ? 'is-invalid' : ''}
             classNamePrefix="react-select"
           />
@@ -467,6 +479,7 @@ const Payroll = () => {
             options={bonusOptions}
             isMulti
             placeholder="-- Sélectionner les bonus --"
+            noOptionsMessage={() => "Aucune option disponible"}
             className={errors.bonusId ? 'is-invalid' : ''}
             classNamePrefix="react-select"
           />
@@ -492,6 +505,7 @@ const Payroll = () => {
             options={deductionOptions}
             isMulti
             placeholder="-- Sélectionner les déductions --"
+            noOptionsMessage={() => "Aucune option disponible"}
             className={errors.deductionId ? 'is-invalid' : ''}
             classNamePrefix="react-select"
           />
@@ -543,7 +557,7 @@ const Payroll = () => {
                   <div className="d-flex gap-2">
                     <button
                       className="btn btn-primary d-flex align-items-center"
-                      onClick={() => sendPayrollEmailToAll()}
+                      onClick={handleSendAllClick}
                     >
                       <i className="ti ti-send me-2"></i>
                       Envoyer à tous
@@ -634,7 +648,7 @@ const Payroll = () => {
                                   </li>
                                   <li className="align-bottom">
                                     <a className="avtar avtar-xs btn-link-danger"
-                                      onClick={() => deletePayroll(payroll.id)}
+                                      onClick={() => handleDeleteClick(payroll.id)}
                                       style={{ cursor: 'pointer' }}>
                                       <i className="ti ti-trash f-18" style={{ color: 'red' }}></i>
                                     </a>
@@ -694,6 +708,100 @@ const Payroll = () => {
             </div>
           </div>
         </div>
+
+        {/* Modal de suppression */}
+        {showDeleteModal && (
+          <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Confirmer la suppression</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowDeleteModal(false)}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <p>Êtes-vous sûr de vouloir supprimer cette fiche de paie ?</p>
+                  {payrollToDelete && (
+                    <div className="alert alert-info">
+                      <i className="ti ti-alert-circle me-2"></i>
+                      <strong>Fiche de paie concernée :</strong> ID {payrollToDelete} = {''}
+                      {employees.find(e => e.id === payrolls.find(p => p.id === payrollToDelete)?.employeeId)?.name} {''}
+                      {employees.find(e => e.id === payrolls.find(p => p.id === payrollToDelete)?.employeeId)?.firstName}
+                    </div>
+                  )}
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowDeleteModal(false)}
+                    disabled={loading}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={confirmDeletePayroll}
+                    disabled={loading}
+                  >
+                    {loading ? 'Suppression en cours...' : 'Supprimer'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal d'envoi à tous */}
+        {showSendAllModal && (
+          <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+            <div className="modal-dialog modal-dialog-centered">
+              <div className="modal-content">
+                <div className="modal-header">
+                  <h5 className="modal-title">Confirmer l'envoi à tous</h5>
+                  <button
+                    type="button"
+                    className="btn-close"
+                    onClick={() => setShowSendAllModal(false)}
+                  ></button>
+                </div>
+                <div className="modal-body">
+                  <p>Êtes-vous sûr de vouloir envoyer toutes les fiches de paie par email ?</p>
+                  <div className="alert alert-info">
+                    <i className="ti ti-alert-circle me-2"></i>
+                    <strong>Nombre de fiches à envoyer :</strong> {payrolls.filter(p => p.netSalary > 0).length}
+                  </div>
+                  <div className="alert alert-warning">
+                    <i className="ti ti-alert-triangle me-2 text-warning"></i>
+                    Seules les fiches avec un salaire net valide et un email d'employé valide seront envoyées.
+                  </div>
+                </div>
+                <div className="modal-footer">
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => setShowSendAllModal(false)}
+                    disabled={loading}
+                  >
+                    Annuler
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-primary"
+                    onClick={confirmSendAllEmails}
+                    disabled={loading}
+                  >
+                    {loading ? 'Envoi en cours...' : 'Confirmer l\'envoi'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
