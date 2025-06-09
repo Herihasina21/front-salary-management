@@ -217,13 +217,13 @@ const Department = () => {
         <div className="row">
           <div className="col-12">
             <div className="card">
-              <div className="card-header d-flex justify-content-between align-items-center">
+              <div className="card-header d-flex flex-column flex-md-row justify-content-between align-items-left">
                 <h6>
                   Liste des Départements ({paginatedDepartments.length}/{filteredDepartments.length} affichés,{" "}
                   {departments.length} total)
                 </h6>
-                <div className="d-flex">
-                  <div className="input-group me-3" style={{ width: "300px" }}>
+                <div className="d-flex flex-column flex-md-row mt-3 mt-md-0 align-items-md-stretch">
+                  <div className="input-group mb-3 mb-md-0 me-md-3 col-12 col-md">
                     <input
                       type="text"
                       className="form-control"
@@ -236,7 +236,7 @@ const Department = () => {
                     </button>
                   </div>
                   <button
-                    className="btn btn-primary d-flex align-items-center"
+                    className="btn btn-primary d-flex align-items-center justify-content-center col-12 col-md-auto"
                     data-bs-toggle="modal"
                     data-bs-target="#addModal"
                   >
@@ -331,8 +331,8 @@ const Department = () => {
                     </tbody>
                   </table>
                 </div>
-                <div className="d-flex justify-content-between align-items-center mt-4">
-                  <div className="d-flex align-items-center">
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4">
+                  <div className="d-flex align-items-center mb-3 mb-md-0">
                     <span className="me-2">Afficher</span>
                     <select
                       className="form-select form-select-sm"
@@ -349,14 +349,14 @@ const Department = () => {
                     <span className="ms-2">éléments par page</span>
                   </div>
 
-                  <div>
-                    <span className="me-3">
+                  <div className="d-flex flex-column flex-md-row align-items-md-center">
+                    <span className="me-md-3 mb-3 mb-md-0 text-center text-md-start">
                       Affichage de {filteredDepartments.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} à{" "}
                       {Math.min(currentPage * itemsPerPage, filteredDepartments.length)} sur{" "}
                       {filteredDepartments.length} entrées
                     </span>
 
-                    <div className="btn-group">
+                    <div className="btn-group mx-auto mx-md-0">
                       <button
                         className="btn btn-outline-secondary btn-sm"
                         onClick={() => handlePageChange(1)}

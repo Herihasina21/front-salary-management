@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthService from '../services/AuthService';
 import { toast } from 'react-toastify';
+import { useSidebar } from "../hooks/use-sidebar";
 
 function Navbar() {
     const navigate = useNavigate();
     const [currentUser, setCurrentUser] = useState(AuthService.getCurrentUser());
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
     const [isLoggingOut, setIsLoggingOut] = useState(false);
+    const { toggleSidebar, toggleMobileSidebar } = useSidebar()
 
     // Effet pour écouter les changements du profil
     useEffect(() => {
@@ -20,7 +22,7 @@ function Navbar() {
 
         // Écouter les changements de localStorage
         window.addEventListener('storage', handleStorageChange);
-        
+
         // Vérifier les changements périodiquement (toutes les secondes)
         const interval = setInterval(handleStorageChange, 1000);
 
@@ -53,6 +55,20 @@ function Navbar() {
 
     const cancelLogout = () => {
         setShowLogoutConfirm(false);
+    };
+
+    // Gestionnaires d'événements pour les boutons de toggle
+    const handleSidebarToggle = (e) => {
+        e.preventDefault()
+        toggleSidebar()
+
+        // Forcer un recalcul du layout
+        window.dispatchEvent(new Event('resize'))
+    };
+
+    const handleMobileToggle = (e) => {
+        e.preventDefault()
+        toggleMobileSidebar()
     };
 
     return (
@@ -108,14 +124,22 @@ function Navbar() {
                     <div className="me-auto pc-mob-drp">
                         <ul className="list-unstyled">
                             <li className="pc-h-item pc-sidebar-collapse">
-                                <a href="#" className="pc-head-link ms-0" id="sidebar-hide">
+                                <button
+                                    className="pc-head-link ms-0 btn btn-link p-0 border-0"
+                                    onClick={handleSidebarToggle}
+                                    type="button"
+                                >
                                     <i className="ti ti-menu-2"></i>
-                                </a>
+                                </button>
                             </li>
                             <li className="pc-h-item pc-sidebar-popup">
-                                <a href="#" className="pc-head-link ms-0" id="mobile-collapse">
+                                <button
+                                    className="pc-head-link ms-0 btn btn-link p-0 border-0"
+                                    onClick={handleMobileToggle}
+                                    type="button"
+                                >
                                     <i className="ti ti-menu-2"></i>
-                                </a>
+                                </button>
                             </li>
                         </ul>
                     </div>

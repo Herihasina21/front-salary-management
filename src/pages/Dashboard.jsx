@@ -191,14 +191,15 @@ function Dashboard() {
 
           // Données de distribution des salaires
           const salaryRanges = [
-            { name: "Médiocre (< 1M)", count: 0 },
-            { name: "Moyen (1M-2.5M)", count: 0 },
-            { name: "Grand (> 2.5M)", count: 0 },
+            { name: "(Médiocre <= 1M)", count: 0 },
+            { name: "(Moyen > 1M à 2.5M)", count: 0 },
+            { name: "(Grand > 2.5M)", count: 0 },
+
           ]
 
           salaries.data.data.forEach((salary) => {
             const amount = salary.baseSalary
-            if (amount < 1000000) salaryRanges[0].count++
+            if (amount <= 1000000) salaryRanges[0].count++
             else if (amount <= 2500000) salaryRanges[1].count++
             else salaryRanges[2].count++
           })

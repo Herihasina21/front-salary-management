@@ -340,7 +340,16 @@ const Employee = () => {
 
     personalFields.forEach((field) => {
       if (!currentEmployee[field]?.trim()) {
-        newErrors[field] = `Le champ ${field} est obligatoire.`
+        newErrors[field] = field === "name"
+          ? "Le nom est obligatoire."
+          : field === "firstName"
+            ? "Le prénom est obligatoire."
+            : field === "email"
+              ? "L'email est obligatoire."
+              : field === "phone"
+                ? "Le numéro de téléphone est obligatoire."
+                : "L'adresse est obligatoire."
+
         errorFields.push(
           field === "name"
             ? "Nom"
@@ -358,7 +367,7 @@ const Employee = () => {
 
     if (hasErrors) {
       setErrors(newErrors)
-      toast.error(`Veuillez remplir tous les champs obligatoires: ${errorFields.join(", ")}`, { autoClose: 5000 })
+      toast.error(`Veuillez remplir tous les champs obligatoires : ${errorFields.join(", ")}`, { autoClose: 5000 })
       return
     }
 
@@ -605,13 +614,13 @@ const Employee = () => {
         <div className="row">
           <div className="col-12">
             <div className="card">
-              <div className="card-header d-flex justify-content-between align-items-center">
+              <div className="card-header d-flex flex-column flex-md-row justify-content-between align-items-left">
                 <h6>
                   Liste des Employés ({paginatedEmployees.length}/{filteredEmployees.length} affichés,{" "}
                   {employees.length} total)
                 </h6>
-                <div className="d-flex">
-                  <div className="input-group me-3" style={{ width: "300px" }}>
+                <div className="d-flex flex-column flex-md-row mt-3 mt-md-0 align-items-md-stretch">
+                  <div className="input-group mb-3 mb-md-0 me-md-3 col-12 col-md">
                     <input
                       type="text"
                       className="form-control"
@@ -623,7 +632,9 @@ const Employee = () => {
                       <i className="ti ti-search"></i>
                     </button>
                   </div>
-                  <button className="btn btn-primary d-flex align-items-center" onClick={() => setShowAddModal(true)}>
+                  <button
+                    className="btn btn-primary d-flex align-items-center justify-content-center col-12 col-md-auto"
+                    onClick={() => setShowAddModal(true)}>
                     <MdAdd className="me-2" /> Ajouter un Employé
                   </button>
                 </div>
@@ -736,8 +747,8 @@ const Employee = () => {
                     </tbody>
                   </table>
                 </div>
-                <div className="d-flex justify-content-between align-items-center mt-4">
-                  <div className="d-flex align-items-center">
+                <div className="d-flex flex-column flex-md-row justify-content-between align-items-center mt-4">
+                  <div className="d-flex align-items-center mb-3 mb-md-0">
                     <span className="me-2">Afficher</span>
                     <select
                       className="form-select form-select-sm"
@@ -754,14 +765,14 @@ const Employee = () => {
                     <span className="ms-2">éléments par page</span>
                   </div>
 
-                  <div>
-                    <span className="me-3">
+                  <div className="d-flex flex-column flex-md-row align-items-md-center">
+                    <span className="me-md-3 mb-3 mb-md-0 text-center text-md-start">
                       Affichage de {filteredEmployees.length > 0 ? (currentPage - 1) * itemsPerPage + 1 : 0} à{" "}
                       {Math.min(currentPage * itemsPerPage, filteredEmployees.length)} sur {filteredEmployees.length}{" "}
                       entrées
                     </span>
 
-                    <div className="btn-group">
+                    <div className="btn-group mx-auto mx-md-0">
                       <button
                         className="btn btn-outline-secondary btn-sm"
                         onClick={() => handlePageChange(1)}
@@ -848,19 +859,35 @@ const Employee = () => {
               </div>
               <div className="modal-body">{renderEmployeeForm(newEmployee, false)}</div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowAddModal(false)}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowAddModal(false)}
+                >
                   Fermer
                 </button>
                 {activeTab === "personal" ? (
-                  <button type="button" className="btn btn-primary" onClick={handleNextTab}>
-                    Suivant
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary"
+                    onClick={handleNextTab}
+                  >
+                    Suivant <i className="ti ti-arrow-right ms-1"></i>
                   </button>
                 ) : (
                   <>
-                    <button type="button" className="btn btn-secondary" onClick={handlePreviousTab}>
-                      Précédent
+                    <button
+                      type="button"
+                      className="btn btn-outline-primary me-auto"
+                      onClick={handlePreviousTab}
+                    >
+                      <i className="ti ti-arrow-left me-1"></i> Précédent
                     </button>
-                    <button type="button" className="btn btn-primary" onClick={addEmployee} disabled={loading}>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={addEmployee}
+                      disabled={loading}>
                       {loading ? "Ajout en cours..." : "Ajouter"}
                     </button>
                   </>
@@ -895,19 +922,35 @@ const Employee = () => {
               </div>
               <div className="modal-body">{editingEmployee && renderEmployeeForm(editingEmployee, true)}</div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setShowEditModal(false)}>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowEditModal(false)}
+                >
                   Fermer
                 </button>
                 {activeTab === "personal" ? (
-                  <button type="button" className="btn btn-primary" onClick={handleNextTab}>
-                    Suivant
+                  <button
+                    type="button"
+                    className="btn btn-outline-primary"
+                    onClick={handleNextTab}
+                  >
+                    Suivant <i className="ti ti-arrow-right ms-1"></i>
                   </button>
                 ) : (
                   <>
-                    <button type="button" className="btn btn-secondary" onClick={handlePreviousTab}>
-                      Précédent
+                    <button
+                      type="button"
+                      className="btn btn-outline-primary me-auto"
+                      onClick={handlePreviousTab}
+                    >
+                      <i className="ti ti-arrow-left me-1"></i> Précédent
                     </button>
-                    <button type="button" className="btn btn-primary" onClick={updateEmployee} disabled={loading}>
+                    <button
+                      type="button"
+                      className="btn btn-primary"
+                      onClick={updateEmployee}
+                      disabled={loading}>
                       {loading ? "Mise à jour..." : "Mettre à jour"}
                     </button>
                   </>

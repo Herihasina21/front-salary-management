@@ -16436,11 +16436,16 @@ pre[class*=language-] > code {
   min-height: 60px;
   box-shadow: var(--pc-header-shadow);
   position: fixed;
-  left: 260px;
+  left: 260px; /* valeur par défaut quand le sidebar est visible */
   right: 0;
   z-index: 1025;
   display: flex;
+  transition: left 0.3s ease; /* Smooth transition */
 }
+.pc-header.pc-header-hide {
+  left: 0; /* s'étend à gauche quand le sidebar est masqué */
+}
+
 .pc-header ul {
   margin-bottom: 0;
   display: inline-flex;
